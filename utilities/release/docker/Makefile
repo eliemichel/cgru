@@ -13,6 +13,9 @@ debian-7: FORCE
 debian-8: FORCE
 	$(DOCKER) build -t $(IMAGE):$(@F) -f $(@F)/Dockerfile ../../../
 
+ubuntu-14.04: FORCE
+	$(DOCKER) build -t $(IMAGE):$(@F) -f $(@F)/Dockerfile ../../../
+
 base: Dockerfile
 	$(DOCKER) build -t $(IMAGE):base . && touch base
 
