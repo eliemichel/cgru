@@ -10,7 +10,7 @@ if [ `uname` == "Darwin" ]; then
 else
 	# Load issue file:
 	issuefile="/etc/system-release"
-	[ -f "${issuefile}" ] || issuefile="/etc/gentoo-release" ; [ -f "${issuefile}" ] || issuefile="/etc/issue"
+	[ -f "${issuefile}" ] || issuefile="/etc/gentoo-release" ; [ -f "${issuefile}" ] || issuefile="/etc/issue" ; [ -f "${issuefile}" ] || issuefile="/etc/release"
 	if [ ! -f "${issuefile}" ]; then
 		echo "File '${issuefile}' not found. Can't detect distribution."
 		exit 1
