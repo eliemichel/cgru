@@ -1,6 +1,6 @@
 DOCKER		= docker
 IMAGE		= build-cgru
-PLATFORMS	= debian-7 debian-8 ubuntu-14.04 ubuntu-12.04 centos-6 centos-7
+PLATFORMS	= debian-7 debian-8 ubuntu-14.04 ubuntu-12.04 centos-6 centos-7 fedora-23
 
 .PHONY: all clean $(PLATFORMS)
 
@@ -24,6 +24,9 @@ centos-6:
 	$(DOCKER) build -t $(IMAGE):$(@F) -f $(@F)/Dockerfile ../../../
 
 centos-7:
+	$(DOCKER) build -t $(IMAGE):$(@F) -f $(@F)/Dockerfile ../../../
+
+fedora-23:
 	$(DOCKER) build -t $(IMAGE):$(@F) -f $(@F)/Dockerfile ../../../
 
 base: Dockerfile
