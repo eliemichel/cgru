@@ -137,7 +137,8 @@ void threadRunCycle( void * i_args)
 		if( render->isReady())
 		{
 			// store render Id if it produced a task
-			if( a->users->solve( render, a->monitors))
+            //if( a->users->solve( render, a->monitors))
+            if( a->jobs->solve( render, a->monitors))
 			{
 				solved_renders.push_back( render);
 				tasks_solved++;

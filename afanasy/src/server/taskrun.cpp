@@ -237,7 +237,7 @@ bool TaskRun::refresh( time_t currentTime, RenderContainer * renders, MonitorCon
 	}
 
    // Tasks update timeout check:
-    AFERRAR("currenttime: %d m_progress->time_done: %d af::Environment::getTaskUpdateTimeout() %d\n",currentTime,m_progress->time_done,af::Environment::getTaskUpdateTimeout());
+   //AFERRAR("currenttime: %d m_progress->time_done: %d af::Environment::getTaskUpdateTimeout() %d\n",currentTime,m_progress->time_done,af::Environment::getTaskUpdateTimeout());
    if(( m_stopTime == 0) && ( currentTime > m_progress->time_done + af::Environment::getTaskUpdateTimeout()))
    {
       stop("Task update timeout.", renders, monitoring);
