@@ -107,7 +107,7 @@ bool Msg::allocateBuffer( int i_size, int i_copy_len, int i_copy_offset)
 	}
 	char * old_buffer = m_buffer;
 	m_buffer_size = i_size;
-AFINFA("Msg::allocateBuffer: trying %d bytes ( %d written at %p)", i_size, written, old_buffer)
+//AFINFA("Msg::allocateBuffer: trying %d bytes ( %d written at %p)", i_size, written, old_buffer)
 	m_buffer = new char[m_buffer_size];
 	if( m_buffer == NULL )
 	{

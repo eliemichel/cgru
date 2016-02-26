@@ -38,6 +38,17 @@ int readdata( int fd, char* data, int data_len, int buffer_maxlen)
 #endif
 		if( r < 0)
 		{
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                // Display debug about sender
+                struct sockaddr_in addr;
+                socklen_t addrlen = sizeof(struct sockaddr_in);
+                memset(&addr, 0, addrlen);
+                if (getpeername(fd, (struct sockaddr*) &addr, &addrlen) > -1) {
+                    AFERROR(af::time2str() + std::string(" EWOULDBLOCK: peer addr: ") + std::string(inet_ntoa(addr.sin_addr)) + ":" + af::itos(ntohs(addr.sin_port)));
+                } else {
+                    AFERROR(af::time2str() + std::string(" EWOULDBLOCK: unable to get peer name"));
+                }
+            }
 			AFERRPE("readdata: read");
 			return -1;
 		}

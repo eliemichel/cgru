@@ -218,12 +218,14 @@ void RenderAf::setTask( af::TaskExec *taskexec, MonitorContainer * monitoring, b
 		ms_msg_queue->pushMsg( msg);
 		std::string str = "Starting task: ";
 		str += taskexec->v_generateInfoString( false);
+        std::cout << af::time2str() << ": Adding task [job=" << taskexec->getJobId() << ", block=" << taskexec->getBlockNum() << ", task=" << taskexec->getTaskNum() << "] to render [" << v_generateInfoString() << "]" << std::endl;
 		appendTasksLog( str);
 	}
 	else
 	{
 		std::string str = "Captured by task: ";
 		str += taskexec->v_generateInfoString( false);
+        std::cout << af::time2str() << ": Captured task [job=" << taskexec->getJobId() << ", block=" << taskexec->getBlockNum() << ", task=" << taskexec->getTaskNum() << "] to render [" << v_generateInfoString() << "]" << std::endl;
 		appendTasksLog( str);
 	}
 }
@@ -246,6 +248,7 @@ void RenderAf::startTask( af::TaskExec *taskexec)
 		std::string str = "Starting service: ";
 		str += taskexec->v_generateInfoString( false);
 		appendLog( str);
+        std::cout << af::time2str() << ": Starting task [job=" << taskexec->getJobId() << ", block=" << taskexec->getBlockNum() << ", task=" << taskexec->getTaskNum() << "] to render [" << v_generateInfoString() << "]" << std::endl;
 
 		return;
 	}
@@ -505,7 +508,7 @@ void RenderAf::addTask( af::TaskExec * taskexec)
 
 	m_capacity_used += taskexec->getCapResult();
 
-	if( m_capacity_used > getCapacity() )
+    if( m_capacity_used > getCapacity() )
 		AFERRAR("RenderAf::addTask(): capacity_used > host.capacity (%d>%d)", m_capacity_used, m_host.m_capacity)
 }
 

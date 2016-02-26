@@ -120,6 +120,7 @@ void Task::v_updateState( const af::MCTaskUp & taskup, RenderContainer * renders
       std::ostringstream stream;
       stream << "Task::updatestate: Task is not running: " << m_block->m_job->getName();
       stream << "[" << taskup.getNumBlock() << "][" << taskup.getNumTask() << "]";
+      stream << " (from host Id: " << taskup.getClientId() << ")";
       AFCommon::QueueLogError( stream.str());
       if(( taskup.getStatus() == af::TaskExec::UPPercent  ) ||
          ( taskup.getStatus() == af::TaskExec::UPWarning ))

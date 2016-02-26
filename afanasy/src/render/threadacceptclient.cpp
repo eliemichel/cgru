@@ -173,6 +173,7 @@ void threadAcceptClient( void * i_arg )
 
         int sd = accept( server_sd, (struct sockaddr*)&(ss), &client_sockaddr_len);
 
+
         /* This is a cancellation point so the DlThread::Cancel can do its work. */
         DlThread::Self()->TestCancel();
 

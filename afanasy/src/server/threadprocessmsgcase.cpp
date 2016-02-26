@@ -155,7 +155,7 @@ af::Msg* threadProcessMsgCase( ThreadArgs * i_args, af::Msg * i_msg)
 	  AfContainerLock lock( i_args->renders, AfContainerLock::READLOCK);
 
 	  af::Render render_up( i_msg);
-//printf("Msg::TRenderUpdate: %s - %s\n", render_up.getName().toUtf8().data(), time2Qstr( time(NULL)).toUtf8().data());
+//printf("Msg::TRenderUpdate: %s - %s\n", render_up.getName().data(), af::time2str().data());
 	  RenderContainerIt rendersIt( i_args->renders);
 	  RenderAf* render = rendersIt.getRender( render_up.getId());
 

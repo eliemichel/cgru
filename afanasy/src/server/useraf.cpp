@@ -221,7 +221,7 @@ af::Msg * UserAf::writeJobdsOrder() const
 
 void UserAf::v_refresh( time_t currentTime, AfContainer * pointer, MonitorContainer * monitoring)
 {
-	AFINFA("UserAf::refresh: \"%s\"", getName().toUtf8().data())
+	AFINFA("UserAf::refresh: \"%s\"", getName().c_str())
 
 	int _numjobs = m_jobslist.getCount();
 	int _numrunningjobs = 0;

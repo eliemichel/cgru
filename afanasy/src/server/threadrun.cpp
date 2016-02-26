@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctime>
 
 #include "../libafanasy/environment.h"
 #include "../libafanasy/msgqueue.h"
@@ -54,6 +55,8 @@ void threadRunCycle( void * i_args)
 	ThreadArgs * a = (ThreadArgs*)i_args;
 
 	long long cycle = 0;
+	//std::clock_t last_tick = std::clock();
+	//std::clock_t to_wait = 0;
 
 	while( AFRunning)
 	{
@@ -232,6 +235,19 @@ void threadRunCycle( void * i_args)
 	//
 	AFINFO("ThreadRun::run: sleeping...")
        af::sleep_sec(1);
+    /*
+    std::clock_t new_tick = std::clock();
+    // Accumulates time to wait, flushed by batches of an integer amount of seconds
+    to_wait += std::max(1.0 * CLOCKS_PER_SEC - (new_tick - last_tick), 0.0);
+    last_tick = new_tick;
+    if (to_wait >= CLOCKS_PER_SEC) {
+        AFINFO("ThreadRun::run: sleeping...")
+        int nb_sec = (int)to_wait / CLOCKS_PER_SEC;
+        //std::cout << "Wait for " << nb_sec << "s..." << std::endl;
+        af::sleep_sec(nb_sec);
+        to_wait -= nb_sec * CLOCKS_PER_SEC;
+    }
+    */
 
 	cycle++;
 	}// - while running

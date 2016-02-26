@@ -290,7 +290,7 @@ bool Service::checkExitStatus( int i_status) const
 
 const std::vector<std::string> Service::doPost()
 {
-	AFINFA("Service::doPost()")
+	AFINFO("Service::doPost()")
 
 	std::vector<std::string> cmds;
 

@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
 
 		cycle++;
 
-		if( AFRunning )
+        if( AFRunning)
 			af::sleep_sec(1);
 	}
 

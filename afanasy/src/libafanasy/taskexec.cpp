@@ -61,7 +61,7 @@ TaskExec::TaskExec(
 	m_progress( NULL),
 	m_on_client( false)
 {
-AFINFA("TaskExec::TaskExec: %s:", m_job_name.toUtf8().data(), m_block_name.toUtf8().data(), m_name.toUtf8().data())
+AFINFA("TaskExec::TaskExec: %s:", m_job_name.c_str(), m_block_name.c_str(), m_name.c_str())
 }
 /*
 TaskExec::TaskExec( const std::string & Command):
@@ -89,7 +89,7 @@ TaskExec::TaskExec( const std::string & Command):
 */
 TaskExec::~TaskExec()
 {
-AFINFA("TaskExec:: ~ TaskExec: %s:\n", m_job_name.toUtf8().data(), m_block_name.toUtf8().data(), m_name.toUtf8().data());
+AFINFA("TaskExec:: ~ TaskExec: %s:\n", m_job_name.c_str(), m_block_name.c_str(), m_name.c_str());
 }
 
 TaskExec::TaskExec( Msg * msg):

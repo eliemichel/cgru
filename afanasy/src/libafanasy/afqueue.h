@@ -59,6 +59,7 @@ public:
 
    bool isInitialized( void ) const { return true; }
 
+
 protected:
 
 /// Return first item from queue. BLOCKING FUNCTION if \c block==e_wait .

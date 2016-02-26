@@ -87,6 +87,9 @@ void TaskRun::update( const af::MCTaskUp& taskup, RenderContainer * renders, Mon
    if( taskup.getClientId() != m_hostId)
    {
       AFERRAR("TaskRun::update: taskup.getClientId() != hostId (%d != %d)", taskup.getClientId(), m_hostId)
+      //AFERRAR("Detail: TaskUpdate: %s", taskup.v_generateInfoString(true /* full */).c_str());
+      AFERRAR("Detail: TaskUpdate: job=%d, block=%d, task=%d", taskup.getNumJob(), taskup.getNumBlock(), taskup.getNumTask());
+      // Tells the wrong client to stop doing this task
       return;
    }
    if((m_progress->state & AFJOB::STATE_RUNNING_MASK) == false)
@@ -270,6 +273,8 @@ void TaskRun::stop( const std::string & message, RenderContainer * renders, Moni
       RenderAf * render = rendersIt.getRender( m_hostId);
       if( render ) render->stopTask( m_exec);
    }
+
+   std::cout << af::time2str() << ": Stop task [job=" << m_block->m_job->getId() << ", task=" << m_task->getNumber() << "] on render #" << m_hostId << "(message: " << message << ")" << std::endl;
 
    m_task->v_appendLog( message);
 }

@@ -158,7 +158,7 @@ bool AfQueue::push( AfQueueItem* item, bool i_front )
         AFERRPE("AfQueue::push: sem_post() failed")
 #endif
 
-   AFINFA("Msg* AfQueue::push: item=%p, count=%d", iteueuem, count);
+   AFINFA("Msg* AfQueue::push: item=%p, count=%d", item, count);
 
    return true;
 }

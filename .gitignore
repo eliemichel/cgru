@@ -57,3 +57,8 @@ ipch
 # Project settings
 .idea
 *.iml
+
+# Elie's local
+afanasy/bin-prod/
+afanasy/src/build-project-Desktop-Debug/
+afanasy/src/project.cmake.debug/
