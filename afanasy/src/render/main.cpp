@@ -154,13 +154,17 @@ int main(int argc, char *argv[])
 		for( std::list<af::Msg*>::iterator it = in_msgs.begin(); it != in_msgs.end(); it++)
 			msgCase( *it);
 		// Let tasks to do their work:
-		RenderHost::refreshTasks();
+        if( cycle % af::Environment::getRenderUpdateSec() == 0){
+            RenderHost::refreshTasks();
+        }
+
 		// Unlock render:
 		RenderHost::unLockMutex();
 
 		// Update render resources:
-		if( cycle % af::Environment::getRenderUpdateSec() == 0)
+        if( cycle % af::Environment::getRenderUpdateSec() == 0){
 			RenderHost::update();
+        }
 
 		cycle++;
 

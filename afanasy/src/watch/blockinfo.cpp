@@ -155,7 +155,7 @@ if( type == af::Msg::TBlocksProgress)
 
 void BlockInfo::refresh()
 {
-	if( tasksdone) str_runtime = QString("RT: S%1/A%2")
+    if( tasksdone) str_runtime = QString("Total Runtime: %1 | Average Runtime: %2")
 		.arg( af::time2strHMS( taskssumruntime, true).c_str())
 		.arg( af::time2strHMS( taskssumruntime/tasksdone, true).c_str());
 	else str_runtime = "Run Time";
@@ -170,12 +170,12 @@ void BlockInfo::refresh()
 
 	if( maxrunningtasks    != -1 ) str_properties += QString(" m%1").arg( maxrunningtasks);
 	if( maxruntasksperhost != -1 ) str_properties += QString(" mph%1").arg( maxruntasksperhost);
-	if( false == hostsmask.isEmpty()          ) str_properties += QString(" H(%1)").arg( hostsmask         );
-	if( false == hostsmask_exclude.isEmpty()  ) str_properties += QString(" E(%1)").arg( hostsmask_exclude );
-	if( false == need_properties.isEmpty()    ) str_properties += QString(" P(%1)").arg( need_properties   );
-	if( need_memory > 0 ) str_properties += QString(" M>%1").arg( need_memory);
-	if( need_hdd    > 0 ) str_properties += QString(" H>%1").arg( need_hdd);
-	if( need_power  > 0 ) str_properties += QString(" P>%1").arg( need_power);
+    if( false == hostsmask.isEmpty()          ) str_properties += QString(" Hosts: %1").arg( hostsmask         );
+    if( false == hostsmask_exclude.isEmpty()  ) str_properties += QString(" Hosts Excluded: %1").arg( hostsmask_exclude );
+    if( false == need_properties.isEmpty()    ) str_properties += QString(" Properties: %1").arg( need_properties   );
+    if( need_memory > 0 ) str_properties += QString(" Memory > %1").arg( need_memory);
+    if( need_hdd    > 0 ) str_properties += QString(" HDD > %1").arg( need_hdd);
+    if( need_power  > 0 ) str_properties += QString(" Power > %1").arg( need_power);
 	if( multihost )
 	{
 		str_properties += QString(" MH(%1,%2)").arg( multihost_min).arg( multihost_max);
@@ -186,24 +186,23 @@ void BlockInfo::refresh()
 	if((filesize_min != -1) || (filesize_max != -1))
 		str_properties += QString(" F(%1,%2)").arg( filesize_min).arg( filesize_max);
 
-	str_properties += " [";
+    str_properties += " | Capacity: ";
 	if( varcapacity   ) str_properties += QString("(%1-%2)*").arg( capcoeff_min).arg( capcoeff_max);
-	str_properties += QString("%1]").arg( capacity);
+    str_properties += QString("%1").arg( capacity);
 
-	if( errorhostsnum ) str_avoiderrors  = QString( "e%1").arg( errorhostsnum);
-	if( avoidhostsnum ) str_avoiderrors += QString(" %1A").arg( avoidhostsnum);
+    if( errorhostsnum ) str_avoiderrors  = QString( "error hosts: %1").arg( errorhostsnum);
+    if( avoidhostsnum ) str_avoiderrors += QString(" avoided hosts %1").arg( avoidhostsnum);
 
-	QString tasksinfo = QString("t%1").arg( tasksnum);
+    QString tasksinfo = QString("Tasks: %1").arg( tasksnum);
 	if( numeric )
 	{
-		tasksinfo += QString("(%1-%2").arg( frame_first).arg( frame_last);
+        tasksinfo += QString(" | Frames: %1-%2").arg( frame_first).arg( frame_last);
 		if(( frame_pertask > 1 ) || ( frame_inc > 1 ))
 		{
-			tasksinfo += QString(":%1").arg( frame_pertask);
+            tasksinfo += QString(" %1 per task").arg( frame_pertask);
 			if( frame_inc > 1 )
-				tasksinfo += QString("/%1").arg( frame_inc);
+                tasksinfo += QString(" by %1").arg( frame_inc);
 		}
-		tasksinfo += ")";
 	}
 	else if( frame_pertask > 1)
 	{
@@ -215,21 +214,21 @@ void BlockInfo::refresh()
 	}
 
 	if( nonsequential )
-		tasksinfo += "*";
+        tasksinfo += ", non-sequential";
 
-	str_compact = QString("%1: ").arg( tasksinfo);
-	if( tasksdone) str_compact += QString("%1: ").arg( str_runtime);
+    str_compact = QString("%1, ").arg( tasksinfo);
+    if( tasksdone) str_compact += QString("%1 ").arg( str_runtime);
 	str_compact += name;
 
 	str_percent = QString::number( percentage) + "%";
 	if( false == name.isEmpty()) str_percent += ' ' + name;
 
-	str_progress = QString("%1: r%3 d%5 e%6")
+    str_progress = QString("%1 | rendering: %3 done: %5 error: %6")
 		.arg( tasksinfo)
 		.arg( runningtasksnumber)
 		.arg( tasksdone)
 		.arg( taskserror);
-	if( jobid == AFJOB::SYSJOB_ID ) str_progress += QString(" ready:%1").arg( tasksready);
+    if( jobid == AFJOB::SYSJOB_ID ) str_progress += QString(" ready: %1").arg( tasksready);
 
 	if( false == depends.isEmpty())
 	{

@@ -318,7 +318,6 @@ void Watch::refreshGui()
     Item::calcutaleStarPoints();
 
     // Refresh Images:
-    ButtonMonitor::refreshImages();
     if( ms_d) ms_d->reloadImages();
 
     // Repaint:

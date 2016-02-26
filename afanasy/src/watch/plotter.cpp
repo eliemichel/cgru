@@ -196,7 +196,7 @@ void Plotter::paint( QPainter * painter, int x, int y, int w, int h) const
 	int width = 8;
 	if( w > lines+width) w = lines+width;
 	painter->setPen( Qt::NoPen );
-	painter->setBrush( QBrush( QColor( bgc_r, bgc_g, bgc_b), Qt::SolidPattern ));
+    painter->setBrush( QBrush( QColor( bgc_r, bgc_g, bgc_b), Qt::SolidPattern ));
 	painter->drawRect( x, y, w, h);
 
 	int line_y = y+h;

@@ -16,7 +16,7 @@
 #undef AFOUTPUT
 #include "../include/macrooutput.h"
 
-uint32_t ListNodes::ms_flagsHideShow = e_HideHidden;
+uint32_t ListNodes::ms_flagsHideShow = e_HideHidden | e_HideDone | e_HideOffline;
 
 ListNodes::ListNodes( QWidget* parent, const std::string & type, int RequestMsgType):
    ListItems( parent, type, RequestMsgType),

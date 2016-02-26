@@ -4,8 +4,9 @@
 
 #include <QtGui/QImage>
 #include <QtGui/QWidget>
+#include <QtGui/QPushButton>
 
-class ButtonMonitor : public QWidget
+class ButtonMonitor : public QPushButton
 {
    Q_OBJECT
 
@@ -13,29 +14,19 @@ public:
    ButtonMonitor( int wType, QWidget *parent);
    ~ButtonMonitor();
 
-   static void refreshImages();
-
    static void pushButton( int wType);
-
-   static const int ButtonsHeight;
 
    static void unset();
 
 protected:
    void contextMenuEvent( QContextMenuEvent *event);
 
-   void paintEvent ( QPaintEvent * event );
-
-   void enterEvent( QEvent * event);
-   void leaveEvent( QEvent *event);
    void mousePressEvent( QMouseEvent * event );
-   void mouseReleaseEvent( QMouseEvent * event );
 
 private slots:
    void open_SLOT();
 
 private:
-   void createImage();
    void openMonitor( bool inSeparateWindow);
 
 private:

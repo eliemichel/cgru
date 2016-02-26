@@ -231,7 +231,7 @@ void threadRunCycle( void * i_args)
 	// Sleeping
 	//
 	AFINFO("ThreadRun::run: sleeping...")
-	   af::sleep_sec( 1);
+       af::sleep_sec(1);
 
 	cycle++;
 	}// - while running

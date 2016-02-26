@@ -35,6 +35,7 @@
 #include <QtGui/QPainter>
 #include <QtGui/QScrollArea>
 
+
 #define AFOUTPUT
 #undef AFOUTPUT
 #include "../include/macrooutput.h"
@@ -91,13 +92,14 @@ Dialog::Dialog():
     m_hlayout_a->setAlignment( m_btn_out_right, Qt::AlignVCenter);
 
     m_infoline = new InfoLine( this);
-    m_infoline->setMaximumHeight( ButtonMonitor::ButtonsHeight);
     m_vlayout_b->addWidget( m_infoline);
+    m_infoline->setHidden(true);
 
     m_labelversion = new LabelVersion(this);
     m_vlayout_b->addWidget( m_labelversion);
+    m_labelversion->setHidden(true);
 
-    m_topleft  = new QWidget( this);
+    m_topleft  = new QLabel("", this);
     m_topright = new QWidget( this);
     m_hlayout_b->addWidget( m_topleft);
     m_btnMonitor[Watch::WJobs]    = new ButtonMonitor( Watch::WJobs,    this);
@@ -462,13 +464,15 @@ void Dialog::keyPressEvent( QKeyEvent * event)
          m_btnMonitor[Watch::WMonitors] = new ButtonMonitor( Watch::WMonitors, this);
          m_hlayout_b->addWidget( m_btnMonitor[Watch::WMonitors]);
 
-         setBackgroundRole( QPalette::LinkVisited );
+//         setBackgroundRole( QPalette::LinkVisited );
          displayWarning("GOD MODE");
+         m_topleft->setText("GOD MODE");
       }
       else if( af::Environment::VISOR())
       {
-         setBackgroundRole( QPalette::Link );
+//         setBackgroundRole( QPalette::Link );
          displayWarning("VISOR MODE");
+         m_topleft->setText("VISOR MODE");
       }
       else
       {
@@ -478,13 +482,11 @@ void Dialog::keyPressEvent( QKeyEvent * event)
             m_btnMonitor[Watch::WMonitors] = NULL;
          }
 
-         setBackgroundRole( QPalette::NoRole );
+//         setBackgroundRole( QPalette::NoRole );
          displayWarning("SUPER USER MODE OFF");
       }
       int opened_type = m_monitorType ;
       closeList();
-//      ButtonMonitor::unset();
-      ButtonMonitor::refreshImages();
       setDefaultWindowTitle();
       if( opened_type != Watch::WNONE) openMonitor( opened_type, false);
    }

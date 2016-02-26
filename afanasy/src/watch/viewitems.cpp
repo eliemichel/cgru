@@ -42,7 +42,7 @@ ViewItems::ViewItems( QWidget * parent):
     QListView( parent),
     listitems( NULL)
 {
-    setSpacing( 3);
+//    setSpacing( 3);
     setUniformItemSizes( false);
 
     #if QT_VERSION >= 0x040300

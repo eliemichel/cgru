@@ -5,13 +5,14 @@
 
 #include <QtGui/QAction>
 #include <QtGui/QWidget>
+#include <QtGui/QFrame>
 
 class QLabel;
 class QHBoxLayout;
 
 class ListItems;
 
-class CtrlSortFilter : public QWidget
+class CtrlSortFilter : public QFrame
 {
 Q_OBJECT
 public:
@@ -68,7 +69,6 @@ signals:
 
 protected:
    void contextMenuEvent( QContextMenuEvent *event);
-   void paintEvent( QPaintEvent * event);
 
 private slots:
    void actSortType( int type);

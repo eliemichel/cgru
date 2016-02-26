@@ -83,7 +83,7 @@ Press RMB for Options.\
 		connect( m_view->selectionModel(), SIGNAL( selectionChanged( const QItemSelection &, const QItemSelection &)),
 	                                 this,   SLOT( selectionChanged( const QItemSelection &, const QItemSelection &)));
 
-	setSpacing();
+//	setSpacing();
 
 	QTimer * timer = new QTimer(this);
 	timer->start( 1900 * af::Environment::getWatchRefreshInterval());

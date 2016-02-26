@@ -128,14 +128,14 @@ void ItemJob::updateValues( af::Node *node, int type)
    if( state & AFJOB::STATE_DONE_MASK) runningTime = af::time2strHMS( time_run).c_str();
 
    properties.clear();
-   if( false == dependmask_global.isEmpty()) properties += QString(" gD(%1)").arg( dependmask_global   );
-   if( false == dependmask.isEmpty()       ) properties += QString(" D(%1)" ).arg( dependmask          );
-   if( false == hostsmask.isEmpty()        ) properties += QString(" H(%1)" ).arg( hostsmask           );
-   if( false == hostsmask_exclude.isEmpty()) properties += QString(" E(%1)" ).arg( hostsmask_exclude   );
+   if( false == dependmask_global.isEmpty()) properties += QString(" Global Dependency: %1").arg( dependmask_global   );
+   if( false == dependmask.isEmpty()       ) properties += QString(" Dependency: %1" ).arg( dependmask          );
+   if( false == hostsmask.isEmpty()        ) properties += QString(" Hosts Included: %1" ).arg( hostsmask           );
+   if( false == hostsmask_exclude.isEmpty()) properties += QString(" Hosts Excluded: %1" ).arg( hostsmask_exclude   );
    if( false == need_properties.isEmpty()  ) properties += QString(" P(%1)" ).arg( need_properties     );
-   if( maxrunningtasks != -1 ) properties += QString(" m%1").arg( maxrunningtasks);
-   if( maxruntasksperhost != -1 ) properties += QString(" mph%1").arg( maxruntasksperhost);
-   properties += QString(" p%2").arg( m_priority);
+   if( maxrunningtasks != -1 ) properties += QString(" max. running tasks: %1").arg( maxrunningtasks);
+   if( maxruntasksperhost != -1 ) properties += QString(" max. running tasks/host: %1").arg( maxruntasksperhost);
+   properties += QString(" Priority: %2").arg( m_priority);
 	if( ppapproval )
 		properties += " PPA";
 
@@ -243,7 +243,7 @@ void ItemJob::paint( QPainter *painter, const QStyleOptionViewItem &option) cons
 				int sec_all = sec_run * 100.0 / percentage;
 				int eta = sec_all - sec_run;
 				if( eta > 0 )
-					user_time = QString::fromUtf8("ETA≈") + afqt::stoq( af::time2strHMS( eta)) + " " + user_eta;
+                    user_time = QString::fromUtf8("ETA≈") + afqt::stoq( af::time2strHMS( eta)) + " User: " + user_eta;
 			}
 		}
 	}
@@ -268,7 +268,7 @@ void ItemJob::paint( QPainter *painter, const QStyleOptionViewItem &option) cons
 
    painter->setPen( clrTextMain( option) );
    painter->setFont( afqt::QEnvironment::f_name);
-   painter->drawText( x+30, y, w-40-rect_user.width(), 20, Qt::AlignVCenter | Qt::AlignLeft, m_name);
+   painter->drawText( x+30, y+2, w-40-rect_user.width(), 20, Qt::AlignVCenter | Qt::AlignLeft, QString("#%1  ").arg(getId())+ m_name);
 
    if( state & AFJOB::STATE_DONE_MASK)
    {

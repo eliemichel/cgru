@@ -23,16 +23,16 @@
 #undef AFOUTPUT
 #include "../include/macrooutput.h"
 
-int     ListJobs::SortType       = CtrlSortFilter::TNONE;
+int     ListJobs::SortType       = CtrlSortFilter::TPRIORITY;
 bool    ListJobs::SortAscending  = false;
 int     ListJobs::FilterType     = CtrlSortFilter::TNAME;
 bool    ListJobs::FilterInclude  = true;
 bool    ListJobs::FilterMatch    = false;
 QString ListJobs::FilterString   = "";
 
-int     ListJobs::SortType_SU       = CtrlSortFilter::TTIMECREATION;
+int     ListJobs::SortType_SU       = CtrlSortFilter::TPRIORITY;
 bool    ListJobs::SortAscending_SU  = false;
-int     ListJobs::FilterType_SU     = CtrlSortFilter::TUSERNAME;
+int     ListJobs::FilterType_SU     = CtrlSortFilter::TNAME;
 bool    ListJobs::FilterInclude_SU  = true;
 bool    ListJobs::FilterMatch_SU    = false;
 QString ListJobs::FilterString_SU = "";
@@ -62,11 +62,11 @@ ListJobs::ListJobs( QWidget* parent):
 	ctrl->addSortType(   CtrlSortFilter::TTIMEFINISHED);
 	ctrl->addSortType(   CtrlSortFilter::TNUMRUNNINGTASKS);
 	ctrl->addSortType(   CtrlSortFilter::TNAME);
-	ctrl->addFilterType( CtrlSortFilter::TNONE);
-	ctrl->addFilterType( CtrlSortFilter::TNAME);
-	if( af::Environment::VISOR())
+    ctrl->addSortType(   CtrlSortFilter::TPRIORITY);
+    ctrl->addFilterType( CtrlSortFilter::TNONE);
+    ctrl->addFilterType( CtrlSortFilter::TNAME);
+    if( af::Environment::VISOR())
 	{
-		ctrl->addSortType(   CtrlSortFilter::TPRIORITY);
 		ctrl->addSortType(   CtrlSortFilter::THOSTNAME);
 		ctrl->addSortType(   CtrlSortFilter::TUSERNAME);
 		ctrl->addFilterType( CtrlSortFilter::THOSTNAME);
@@ -307,8 +307,8 @@ void ListJobs::contextMenuEvent( QContextMenuEvent *event)
 	// System job ID is 1, and can not be deleted
 	if( jobitem->getId() != 1 )
 	{
-		action = new QAction( "Delete", this);
-		connect( action, SIGNAL( triggered() ), this, SLOT( actDelete()  ));
+        action = new QAction( "Delete", this);
+        connect( action, SIGNAL( triggered() ), this, SLOT( actDelete()  ));
 		menu.addAction( action);
 	}
 
@@ -434,16 +434,16 @@ void ListJobs::calcTotals()
 
 	if( af::Environment::VISOR())
 	{
-		m_parentWindow->setWindowTitle(QString("J[%1]: R%2/%3D/%4E")
+        m_parentWindow->setWindowTitle(QString("%1 jobs | %2 running | %3 done | %4 erroneous")
 			.arg( numjobs).arg( running).arg( done).arg( error));
 	}
 	else
 	{
 		if( blocksrun )
-			m_parentWindow->setWindowTitle(QString("J[%1]: R%2/%3D/%4E B%5-%6%")
+            m_parentWindow->setWindowTitle(QString("%1 jobs | %2 running | %3 done | %4 erroneous | blocks %5-%6%")
 				.arg( numjobs).arg( running).arg( done).arg( error).arg( blocksrun).arg( percent / blocksrun));
 		else
-			m_parentWindow->setWindowTitle(QString("J[%1]: Done").arg( numjobs));
+            m_parentWindow->setWindowTitle(QString("%1 jobs done").arg( numjobs));
 	}
 }
 

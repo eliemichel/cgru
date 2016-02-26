@@ -598,9 +598,9 @@ void ItemRender::paint( QPainter *painter, const QStyleOptionViewItem &option) c
 				user_time += QString(" %1%").arg( m_tasks_percents[numtask-1]);
 
 				// Draw task percent bar:
-				painter->setPen( Qt::NoPen );
+                painter->setPen( Qt::SolidLine );
 				painter->setOpacity( .5);
-				painter->setBrush( QBrush( afqt::QEnvironment::clr_done.c, Qt::SolidPattern ));
+                painter->setBrush( QBrush( afqt::QEnvironment::clr_done.c.darker(), Qt::SolidPattern ));
 		        painter->drawRect( x, y+m_plots_height + ms_HeightTask * (numtask-1),
 					(w-5)*m_tasks_percents[numtask-1]/100, ms_HeightTask - 2);
 				painter->setOpacity(1.0);

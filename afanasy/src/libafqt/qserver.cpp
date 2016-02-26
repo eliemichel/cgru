@@ -17,19 +17,22 @@ QServer::QServer( QObject *parent):
    thread( NULL),
    init( false)
 {
-   int port = af::Environment::getClientPort();
+   int port = af::Environment::getClientPort()+3;
    int maxports = 65535-port;
    for( int i = 0; i <= maxports; i++)
    {
       bool listening = false;
       int port_to_listen = port;
+      printf("trying port %d, %d\n",  port_to_listen, port);
 #ifdef MACOSX
       port_to_listen = 0; // Let system choose port automatically
 #endif
 #ifndef WINNT
-      listening = listen( QHostAddress::AnyIPv6, port_to_listen);
+      listening = listen( QHostAddress("0.0.0.0") , port_to_listen);
 #endif
-      if( false == listening ) listening = listen( QHostAddress::Any, port_to_listen);
+      printf("listentest1 %d\n",listening);
+      if( false == listening ) listening = listen(QHostAddress("0.0.0.0") , port_to_listen);
+      printf("listentest2 %d\n",listening);
       if( listening)
       {
          port = serverPort();
