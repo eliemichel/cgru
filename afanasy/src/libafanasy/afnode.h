@@ -2,6 +2,7 @@
 
 #include <list>
 #include <algorithm>
+#include <ctime>
 
 #include "af.h"
 
@@ -50,6 +51,8 @@ public:
    inline bool unLocked() const { return !m_locked; }
 
     inline void setHidden( bool i_hide = true) { if( i_hide ) m_flags = m_flags | FHidden; else m_flags = m_flags & (~FHidden); }
+
+    virtual inline long long getTimeCreation() const { return 0; }
 
    //Solving:
    enum SolvingMethod{

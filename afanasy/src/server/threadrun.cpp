@@ -137,8 +137,12 @@ void threadRunCycle( void * i_args)
 		if( render->isReady())
 		{
 			// store render Id if it produced a task
-            //if( a->users->solve( render, a->monitors))
-            if( a->jobs->solve( render, a->monitors))
+            bool solved;
+            if (af::Environment::getSolvingUseUserPriority())
+                solved = a->users->solve( render, a->monitors);
+            else
+                solved = a->jobs->solve( render, a->monitors);
+            if(solved)
 			{
 				solved_renders.push_back( render);
 				tasks_solved++;
@@ -179,7 +183,12 @@ void threadRunCycle( void * i_args)
 			RenderAf * render = *rIt;
 			if( render->isReady())
 			{
-				if( a->users->solve( render, a->monitors))
+                bool solved;
+                if (af::Environment::getSolvingUseUserPriority())
+                    solved = a->users->solve( render, a->monitors);
+                else
+                    solved = a->jobs->solve( render, a->monitors);
+                if(solved)
 				{
 					rIt++;
 					tasks_solved++;
@@ -204,7 +213,12 @@ void threadRunCycle( void * i_args)
 		{
 			if( render->isWOLWakeAble())
 			{
-				if( a->users->solve( render, a->monitors))
+                bool solved;
+                if (af::Environment::getSolvingUseUserPriority())
+                    solved = a->users->solve( render, a->monitors);
+                else
+                    solved = a->jobs->solve( render, a->monitors);
+                if(solved)
 				{
 					render->wolWake( a->monitors, std::string("Automatic waking by a job."));
 					continue;

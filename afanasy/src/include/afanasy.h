@@ -23,6 +23,10 @@ namespace AFGENERAL
 	const int  LOG_LINES_MAX = 100;        ///< Maximum number of lines in each node log.
 
 	const char HTML_BROWSER[] = "/afanasy/browser/index.html";
+
+    const bool SOLVING_USE_USER_PRIORITY = true;
+    const bool SOLVING_SIMPLER = false;
+
 }
 
 /// Addresses:

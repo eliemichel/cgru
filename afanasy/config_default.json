@@ -198,5 +198,12 @@
 	"af_client_dispatch_so_sndtimeo_sec":8,
 	"af_client_dispatch_tcp_nodelay":0,
 
+"":"Solving:",
+	"af_solving_use_user_priority":true,
+		"":"Whether task solving takes user priority into account or not. If set on, Jobs are sorted by user's priority first, then by job priority within a user. If not, only job proirities are used.",
+
+	"af_solving_simpler":false,
+		"":"Use a simplified solving algorithm. No notion of 'need' is used: jobs are sorted by priority first, and creation date then (older first).",
+
 	"":""
 }}

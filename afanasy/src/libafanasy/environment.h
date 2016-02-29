@@ -183,6 +183,10 @@ public:
 	static inline int getSockOpt_Dispatch_TCP_NODELAY()
 		{ return m_server ? server_dispatch_tcp_nodelay : client_dispatch_tcp_nodelay; }
 
+    /// Task solving options
+    static inline bool getSolvingUseUserPriority() { return solving_use_user_priority; }
+    static inline bool getSolvingSimpler() { return solving_simpler; }
+
 
 
 private:
@@ -348,5 +352,9 @@ private:
 	static std::string pswd_visor;  ///< VISOR password
 	static bool god_mode;       ///< user is GOD
 	static std::string pswd_god;    ///< GOD password
+
+    /// Task solving options
+    static bool solving_use_user_priority;  ///< Whether task solving takes user priority into account or not
+    static bool solving_simpler;            ///< Sort jobs by priority and creation time instead of using the "Need"
 };
 }

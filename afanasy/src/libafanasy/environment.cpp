@@ -106,6 +106,10 @@ int Environment::client_dispatch_so_rcvtimeo_sec  = AFNETWORK::CLIENT_DISPATCH_S
 int Environment::client_dispatch_so_sndtimeo_sec  = AFNETWORK::CLIENT_DISPATCH_SO_SNDTIMEO_SEC;
 int Environment::client_dispatch_tcp_nodelay      = AFNETWORK::CLIENT_DISPATCH_TCP_NODELAY;
 
+/// Task solving options
+bool Environment::solving_use_user_priority = AFGENERAL::SOLVING_USE_USER_PRIORITY;
+bool Environment::solving_simpler = AFGENERAL::SOLVING_SIMPLER;
+
 
 
 std::string Environment::db_conninfo =                     AFDATABASE::CONNINFO;
@@ -267,6 +271,9 @@ void Environment::getVars( const JSON & i_obj)
 	getVar( i_obj, monitor_waitforconnected,          "af_monitor_waitforconnected"          );
 	getVar( i_obj, monitor_waitforreadyread,          "af_monitor_waitforreadyread"          );
 	getVar( i_obj, monitor_waitforbyteswritten,       "af_monitor_waitforbyteswritten"       );
+
+    getVar( i_obj, solving_use_user_priority,         "af_solving_use_user_priority"         );
+    getVar( i_obj, solving_simpler,                   "af_solving_simpler"                   );
 }
 
 bool Environment::getVar( const JSON & i_obj, std::string & o_value, const char * i_name)
