@@ -430,7 +430,7 @@ void ListRenders::calcTitle()
 		if( itemrender->isNimby() || itemrender->isNIMBY()) nimby++;
 		else if( itemrender->isOnline() && (false == itemrender->isBusy())) free++;
 	}
-	m_parentWindow->setWindowTitle(QString("R[%1/%2]: B%3/%4F (n%5)").arg( total).arg( online).arg( busy).arg( free).arg( nimby));
+    m_parentWindow->setWindowTitle(QString("%1 renders | %2 online | %3 busy | %4 free | %5 nimby").arg( total).arg( online).arg( busy).arg( free).arg( nimby));
 }
 
 void ListRenders::actCapacity()
