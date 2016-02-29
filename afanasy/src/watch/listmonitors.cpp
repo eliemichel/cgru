@@ -129,7 +129,7 @@ void ListMonitors::calcTitle()
 		ItemMonitor * itemmonitor = (ItemMonitor*)(m_model->item(i));
 		if( itemmonitor->superuser ) super++;
 	}
-	m_parentWindow->setWindowTitle(QString("M[%1]: %2S").arg( total).arg( super));
+    m_parentWindow->setWindowTitle(QString("%1 monitors | %2 superusers").arg( total).arg( super));
 }
 
 void ListMonitors::actSendMessage()
