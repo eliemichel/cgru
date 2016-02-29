@@ -349,10 +349,6 @@ void TaskProcess::readProcess( const std::string & i_mode, bool i_read_empty)
 	if( readsize > 0 )
 		output += std::string( m_readbuffer, readsize);
 
-	// Skip parsing empty string ( it not forced )
-	if(( i_read_empty == false ) && ( output.size() == 0 ))
-		return;
-
 	m_parser->read( i_mode, output);
 
 	// Send data to listening sockets, it not empty
