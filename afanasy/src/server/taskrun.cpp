@@ -237,8 +237,17 @@ bool TaskRun::refresh( time_t currentTime, RenderContainer * renders, MonitorCon
 	}
 
    // Tasks update timeout check:
-   //AFERRAR("currenttime: %d m_progress->time_done: %d af::Environment::getTaskUpdateTimeout() %d\n",currentTime,m_progress->time_done,af::Environment::getTaskUpdateTimeout());
-   if(( m_stopTime == 0) && ( currentTime > m_progress->time_done + af::Environment::getTaskUpdateTimeout()))
+   int diff = currentTime - m_progress->time_done;
+   if (diff > af::Environment::getTaskUpdateTimeoutWarning())
+   {
+        std::cout << af::time2str() << ": WARNING:"
+                  << " currenttime: " << currentTime
+                  << " m_progress->time_done: " << m_progress->time_done
+                  << " (difference: " << diff << ")"
+                  << " af::Environment::getTaskUpdateTimeout() " << af::Environment::getTaskUpdateTimeout()
+                  << std::endl;
+   }
+   if(( m_stopTime == 0) && ( diff > af::Environment::getTaskUpdateTimeout()))
    {
       stop("Task update timeout.", renders, monitoring);
       errorHostId = m_hostId;

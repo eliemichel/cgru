@@ -134,6 +134,10 @@
 		"":"If task progress (state or percentage) has not been updated for this period,",
 		"":"It wiil considered as an error, and render will be push in error hosts list.",
 
+	"af_task_update_timeout_warning":10,
+		"":"Display a warning before the previous timeout is reached.",
+		"":"Use it to determine easily the most appropriate timeout for your architecture.",
+
 	"af_render_connectretries":3,
 		"":"Connection fails number to consider that render can`t connect to server.",
 
