@@ -52,7 +52,7 @@ int ClientContainer::addClient( AfNodeSrv * i_nodesrv, bool deleteSameAddress, M
 		for( AfNodeSrv * node = nodesIt.getNode(); node != NULL; nodesIt.next(), node = nodesIt.getNode())
 		{
 			af::Client * client = (af::Client*)(node->node());
-			if( newClient->addrEqual( client))
+            if( newClient->addrEqual( client) && false)
 			{
 				if( deleteSameAddress)
 				{

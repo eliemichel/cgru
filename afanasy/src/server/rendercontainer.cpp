@@ -33,7 +33,7 @@ af::Msg * RenderContainer::addRender( RenderAf *newRender, MonitorContainer * mo
       // Search for a render with the same hostname:
       for( RenderAf *render = rendersIt.render(); render != NULL; rendersIt.next(), render = rendersIt.render())
       {
-         if( newRender->getName() == render->getName())
+         if( newRender->getName() == render->getName() && false)
          {
             // Online render with the same hostname found:
             if( render->isOnline())
