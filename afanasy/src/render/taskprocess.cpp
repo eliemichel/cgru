@@ -181,7 +181,7 @@ void TaskProcess::launchCommand()
 	if( ResumeThread( m_pinfo.hThread) == -1)
 		AFERRAR("TaskProcess: ResumeThread failed with code = %d.", GetLastError())
 
-	printf("\nStarted PID=%d: ", m_pid);
+    std::cout << "\n" << af::time2str() << ": Started PID=" << m_pid << ": ";
 
 	#else
 	// On UNIX we set buffers and non-blocking:
@@ -194,7 +194,7 @@ void TaskProcess::launchCommand()
 		setNonblocking( fileno( m_io_outerr));
 	}
 
-	printf("\nStarted PID=%d SID=%d(%d) GID=%d(%d): ", m_pid, getsid(m_pid), setsid(), getpgid(m_pid), getpgrp());
+    std::cout << "\n" << af::time2str() << ": Started PID=" << m_pid << " SID=" << getsid(m_pid) << "(" << setsid() << ") GID=" << getpgid(m_pid) << "(" << getpgrp() << "): ";
 
 	#endif
 
@@ -452,7 +452,7 @@ void TaskProcess::sendTaskSate()
 
 void TaskProcess::processFinished( int i_exitCode)
 {
-printf("Finished PID=%d: Exit Code=%d Status=%d %s\n", m_pid, i_exitCode, WEXITSTATUS( i_exitCode), m_stop_time ? "(stopped)":"");
+    std::cout << af::time2str() << ": Finished PID=" << m_pid << ": Exit Code=" << i_exitCode << " Status=" << WEXITSTATUS( i_exitCode) << " " << (m_stop_time ? "(stopped)":"") << std::endl;
 
 	// Zero m_pid means that task is not running any more
 	m_pid = 0;
@@ -476,7 +476,9 @@ printf("Finished PID=%d: Exit Code=%d Status=%d %s\n", m_pid, i_exitCode, WEXITS
 	// Force to read even empty output to let user to perform finalizing actions.
 	readProcess( af::itos( i_exitCode) + ':' + af::itos( m_stop_time),/* i_read_empty = */ true);
 
-	bool success = m_service->checkExitStatus( WEXITSTATUS( i_exitCode));
+    bool success = false;
+    if ( WIFEXITED( i_exitCode))
+        success = m_service->checkExitStatus( WEXITSTATUS( i_exitCode));
 
 	if(( success != true ) || ( m_stop_time != 0 ))
 	{
