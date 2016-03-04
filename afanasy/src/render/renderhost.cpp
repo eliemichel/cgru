@@ -26,7 +26,6 @@ bool RenderHost::ms_connected = false;
 int RenderHost::ms_connection_lost_count = 0;
 std::vector<PyRes*> RenderHost::ms_pyres;
 std::vector<TaskProcess*> RenderHost::ms_tasks;
-bool RenderHost::ms_listening = false;
 bool RenderHost::ms_no_output_redirection = false;
 std::vector<std::string> RenderHost::ms_windowsmustdie;
 
@@ -104,14 +103,6 @@ RenderHost::~RenderHost()
     // Delete queues:
     delete ms_msgAcceptQueue;
     delete ms_msgDispatchQueue;
-}
-
-void RenderHost::setListeningPort( uint16_t i_port)
-{
-    ms_obj->m_address.setPort( i_port);
-    ms_listening = true;
-    if( af::Environment::isVerboseMode())
-        printf("RenderHost::setListeningPort = %d\n", i_port);
 }
 
 void RenderHost::dispatchMessage( af::Msg * i_msg)
@@ -217,16 +208,6 @@ void RenderHost::update()
 #ifdef WINNT
     windowsMustDie();
 #endif
-
-    if( false == isListening())
-    {
-        // Port can't be zero!
-        // It seems that listening thread is not started to listen any port.
-        AFERROR("RenderHost::update(): Render is not listening any port.")
-        // This error is not fatal.
-        // Client was just started and we simple will wait next update.
-        return;
-    }
 
     af::Msg * msg = new af::Msg( ms_updateMsgType, ms_obj);
     msg->setReceiving();
