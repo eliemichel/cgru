@@ -144,7 +144,7 @@ void threadAcceptPort( void * i_arg, int i_port)
 		return;
 	}
 
-	if( listen( server_sd, 9) != 0)
+    if( listen( server_sd, SOMAXCONN) != 0)
 	{
 		AFERRAR("Port %d:", i_port)
 		AFERRPE("listen()")
