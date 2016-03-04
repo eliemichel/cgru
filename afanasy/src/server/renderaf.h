@@ -1,5 +1,7 @@
 #pragma once
 
+#include <queue>
+
 #include "../include/afjob.h"
 
 #include "../libafanasy/msgclasses/mctaskup.h"
@@ -63,6 +65,9 @@ public:
 
 /// Deregister render, on SIGINT client recieving.
 	void deregister( JobContainer * jobs, MonitorContainer * monitoring );
+
+/// Get the next message in the sending queue
+    af::Msg * getNextMsg();
 
 	virtual void v_action( Action & i_action);
 
@@ -133,6 +138,8 @@ private:
 	std::vector<int> m_services_disabled_nums;
 
 	std::list<std::string> m_tasks_log;							///< Tasks Log.
+
+    std::queue<af::Msg*> m_msg_queue;  ///< Queue of messages to be sent
 
 private:
 	static RenderContainer * ms_renders;
