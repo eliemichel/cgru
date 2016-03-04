@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 
 #include "../include/afanasy.h"
+#include "../libafanasy/logger.h"
 
 #include "../libafanasy/environment.h"
 #include "../libafanasy/farm.h"
@@ -160,13 +161,21 @@ af::Msg* threadProcessMsgCase( ThreadArgs * i_args, af::Msg * i_msg)
 	  RenderAf* render = rendersIt.getRender( render_up.getId());
 
 	  int id = 0;
+      o_msg_response = NULL;
 	  // If there is not such render, a zero id will be send.
 	  // It is a signal for client to register again (may be server was restarted).
 	  if((render != NULL) && ( render->update( &render_up)))
 	  {
 		 id = render->getId();
-	  }
-	  o_msg_response = new af::Msg( af::Msg::TRenderId, id);
+         // This may be NULL, but it's not a problem since it will be catched later on
+         o_msg_response = render->getNextMsg();
+      }
+
+      // If we don't have anything else to reply, we just send the ID, or 0 if the render should register
+      if (NULL == o_msg_response)
+      {
+          o_msg_response = new af::Msg( af::Msg::TRenderId, id);
+      }
 	  break;
 	}
 	case af::Msg::TRendersListRequest:
