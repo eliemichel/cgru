@@ -52,11 +52,6 @@ public:
 
     static void listenFailed( const af::Address & i_addr);
 
-//    inline static void   lockMutex() { ms_obj->m_mutex.WriteLock();  }
-//    inline static void unLockMutex() { ms_obj->m_mutex.WriteUnlock();}
-    inline static void   lockMutex() { ms_obj->m_mutex.Lock();  }
-    inline static void unLockMutex() { ms_obj->m_mutex.Unlock();}
-
 #ifdef WINNT
     static void windowsMustDie();
 #endif
