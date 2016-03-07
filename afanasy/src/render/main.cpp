@@ -31,37 +31,20 @@ void sig_int(int signum)
 //#####################################################################################
 
 // Functions:
-void threadAcceptClient( void * i_arg );
+void set_signal_handlers();
 void msgCase( af::Msg * msg);
 
 int main(int argc, char *argv[])
 {
 	Py_InitializeEx(0);
 
-   // Set signals handlers:
-#ifdef WINNT
-	signal( SIGINT,  sig_int);
-	signal( SIGTERM, sig_int);
-	signal( SIGSEGV, sig_int);
-#else
-	struct sigaction actint;
-	bzero( &actint, sizeof(actint));
-	actint.sa_handler = sig_int;
-	sigaction( SIGINT,  &actint, NULL);
-	sigaction( SIGTERM, &actint, NULL);
-	sigaction( SIGSEGV, &actint, NULL);
-	// SIGPIPE signal catch:
-	struct sigaction actpipe;
-	bzero( &actpipe, sizeof(actpipe));
-	actpipe.sa_handler = sig_pipe;
-	sigaction( SIGPIPE, &actpipe, NULL);
-#endif
+    set_signal_handlers();
 
 	// Initialize environment and try to append python path:
 	af::Environment ENV( af::Environment::AppendPythonPath | af::Environment::SolveServerName, argc, argv);
 	if( !ENV.isValid())
 	{
-		AFERROR("main: Environment initialization failed.\n");
+        AF_ERR << "Environment initialization failed.";
 		exit(1);
 	}
 
@@ -133,22 +116,13 @@ int main(int argc, char *argv[])
 	while( AFRunning)
 	{
 		// Collect all available incomming messages:
-		std::list<af::Msg*> in_msgs;
-		while( af::Msg * msg = RenderHost::acceptTry() )
-			in_msgs.push_back( msg);
+        while( af::Msg * msg = RenderHost::acceptTry() )
+            msgCase( msg);
 
-		// Lock render:
-		RenderHost::lockMutex();
-		// React on all incoming messages:
-		for( std::list<af::Msg*>::iterator it = in_msgs.begin(); it != in_msgs.end(); it++)
-			msgCase( *it);
-		// Let tasks to do their work:
+        // Let tasks to do their work:
         if( cycle % af::Environment::getRenderUpdateSec() == 0){
             RenderHost::refreshTasks();
         }
-
-		// Unlock render:
-		RenderHost::unLockMutex();
 
 		// Update render resources:
         if( cycle % af::Environment::getRenderUpdateSec() == 0){
@@ -168,6 +142,28 @@ int main(int argc, char *argv[])
 	printf("Exiting render.\n");
 
 	return 0;
+}
+
+void set_signal_handlers()
+{
+   // Set signals handlers:
+#ifdef WINNT
+    signal( SIGINT,  sig_int);
+    signal( SIGTERM, sig_int);
+    signal( SIGSEGV, sig_int);
+#else
+    struct sigaction actint;
+    bzero( &actint, sizeof(actint));
+    actint.sa_handler = sig_int;
+    sigaction( SIGINT,  &actint, NULL);
+    sigaction( SIGTERM, &actint, NULL);
+    sigaction( SIGSEGV, &actint, NULL);
+    // SIGPIPE signal catch:
+    struct sigaction actpipe;
+    bzero( &actpipe, sizeof(actpipe));
+    actpipe.sa_handler = sig_pipe;
+    sigaction( SIGPIPE, &actpipe, NULL);
+#endif
 }
 
 void msgCase( af::Msg * msg)
