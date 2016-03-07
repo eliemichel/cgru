@@ -64,15 +64,16 @@ int setNonblocking(int fd)
 
 long long TaskProcess::counter = 0;
 
-TaskProcess::TaskProcess( af::TaskExec * i_taskExec):
+TaskProcess::TaskProcess( af::TaskExec * i_taskExec, RenderHost * i_render):
 	m_taskexec( i_taskExec),
 	m_parser( NULL),
 	m_update_status( af::TaskExec::UPPercent),
 	m_stop_time( 0),
-	m_pid(0),
+    m_pid( 0),
 	m_doing_post( false),
 	m_zombie( false),
-	m_dead_cycle(0)
+    m_dead_cycle( 0),
+    m_render( i_render)
 {
 	m_store_dir = af::Environment::getTempDir() + AFGENERAL::PATH_SEPARATOR + "tasks" + AFGENERAL::PATH_SEPARATOR;
 	m_store_dir += af::itos( m_taskexec->getJobId());
@@ -139,7 +140,7 @@ void TaskProcess::launchCommand()
 	if( nice < -10 ) priority = HIGH_PRIORITY_CLASS;
 
 	// For MSWIN we need to CREATE_SUSPENDED to attach process to a job before it can spawn any child:
-	if( RenderHost::noOutputRedirection())
+    if( m_render->noOutputRedirection())
 	{
 		// Test a command w/o output redirection:
 	    if( af::launchProgram( &m_pinfo, m_cmd, m_wdir, 0, 0, 0,
@@ -155,7 +156,7 @@ void TaskProcess::launchCommand()
 	#else
 	// For UNIX we can ask child prcocess to call a function to setup after fork()
 	fp_setupChildProcess = setupChildProcess;
-	if( RenderHost::noOutputRedirection())
+    if( m_render->noOutputRedirection())
 		m_pid = af::launchProgram( m_cmd, m_wdir, 0, 0, 0);
 	else
 		m_pid = af::launchProgram( m_cmd, m_wdir, &m_io_input, &m_io_output, &m_io_outerr);
@@ -185,7 +186,7 @@ void TaskProcess::launchCommand()
 
 	#else
 	// On UNIX we set buffers and non-blocking:
-	if( false == RenderHost::noOutputRedirection())
+    if( false == m_render->noOutputRedirection())
 	{
 		setbuf( m_io_output, m_filebuffer_out);
 		setbuf( m_io_outerr, m_filebuffer_err);
@@ -226,7 +227,7 @@ TaskProcess::~TaskProcess()
 
 void TaskProcess::closeHandles()
 {
-	if( false == RenderHost::noOutputRedirection())
+    if( false == m_render->noOutputRedirection())
 	{
 		fclose( m_io_input);
 		fclose( m_io_output);
@@ -337,7 +338,7 @@ void TaskProcess::close()
 
 void TaskProcess::readProcess( const std::string & i_mode, bool i_read_empty)
 {
-	if( RenderHost::noOutputRedirection()) return;
+    if( m_render->noOutputRedirection()) return;
 
 	std::string output;
 
@@ -354,14 +355,14 @@ void TaskProcess::readProcess( const std::string & i_mode, bool i_read_empty)
 	// Send data to listening sockets, it not empty
 	if( output.size() && m_taskexec->getListenAddressesNum())
 	{
-		af::MCTaskOutput mctaskoutput( RenderHost::getName(),
+        af::MCTaskOutput mctaskoutput( m_render->getName(),
 			m_taskexec->getJobId(),
 			m_taskexec->getBlockNum(),
 			m_taskexec->getTaskNum(),
 			output.size(), output.data());
 		af::Msg * msg = new af::Msg( af::Msg::TTaskOutput, &mctaskoutput);
-		msg->setAddresses( *m_taskexec->getListenAddresses());
-		RenderHost::dispatchMessage( msg);
+        msg->setAddresses( *m_taskexec->getListenAddresses());
+        m_render->dispatchMessage( msg);
 	}
 
 	if( m_parser->hasWarning() && ( m_update_status != af::TaskExec::UPWarning               ) &&
@@ -423,7 +424,7 @@ void TaskProcess::sendTaskSate()
 	activity       = m_parser->getActivity();
 
 	af::MCTaskUp taskup(
-		RenderHost::getId(),
+        m_render->getId(),
 
 		m_taskexec->getJobId(),
 		m_taskexec->getBlockNum(),
@@ -447,7 +448,7 @@ void TaskProcess::sendTaskSate()
 
 //    printf("TaskProcess::sendTaskSate:\n");msg->stdOut();printf("\n");
 
-	RenderHost::dispatchMessage( msg);
+    m_render->dispatchMessage( msg);
 }
 
 void TaskProcess::processFinished( int i_exitCode)

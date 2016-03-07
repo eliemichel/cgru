@@ -32,11 +32,11 @@ void sig_int(int signum)
 
 // Functions:
 void set_signal_handlers();
-void msgCase( af::Msg * msg);
+void msgCase(af::Msg * msg, RenderHost &render);
 
 int main(int argc, char *argv[])
 {
-	Py_InitializeEx(0);
+    Py_InitializeEx(0);
 
     set_signal_handlers();
 
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 		printf("\n");
 		host.v_stdOut( true);
 		hostres.v_stdOut( true);
-		Py_Finalize();
+        Py_Finalize();
 		return 0;
 	}
 
@@ -103,43 +103,43 @@ int main(int argc, char *argv[])
 		pid = waitpid( m_pid, &status, 0);
 		#endif
 
-		Py_Finalize();
+        Py_Finalize();
 		return 0;
 	}
 
 	// Create temp directory, if it does not exist:
 	if( af::pathMakePath( ENV.getTempDir(), af::VerboseOn ) == false) return 1;
 
-	RenderHost * render = new RenderHost();
+    RenderHost * render = RenderHost::getInstance();
 
 	uint64_t cycle = 0;
 	while( AFRunning)
 	{
 		// Collect all available incomming messages:
-        while( af::Msg * msg = RenderHost::acceptTry() )
-            msgCase( msg);
+        while( af::Msg * msg = render->acceptTry() )
+            msgCase( msg, *render);
 
         // Let tasks to do their work:
         if( cycle % af::Environment::getRenderUpdateSec() == 0){
-            RenderHost::refreshTasks();
+            render->refreshTasks();
         }
 
 		// Update render resources:
         if( cycle % af::Environment::getRenderUpdateSec() == 0){
-			RenderHost::update();
+            render->update();
         }
 
 		cycle++;
 
         if( AFRunning)
 			af::sleep_sec(1);
-	}
+    }
 
-	delete render;
+    AF_LOG << "Exiting render.";
 
-	Py_Finalize();
+    delete render;
 
-	printf("Exiting render.\n");
+    Py_Finalize();
 
 	return 0;
 }
@@ -166,30 +166,28 @@ void set_signal_handlers()
 #endif
 }
 
-void msgCase( af::Msg * msg)
+void msgCase( af::Msg * msg, RenderHost &render)
 {
 	if( false == AFRunning )
 		return;
 
-	if( msg == NULL)
-	{
+    if( NULL == msg)
 		return;
-	}
-#ifdef AFOUTPUT
-printf("msgCase: "); msg->stdOut();
-#endif
 
-	// Check not sended messages first, they were pushed back in accept quere:
+    AF_DEBUG  << "msgCase: " << msg->v_generateInfoStream();
+
+    // Check not sended messages first, they were pushed back in accept queue:
 	if( msg->wasSendFailed())
 	{
 		if( msg->getAddress().equal( af::Environment::getServerAddress()))
 		{
 			// Message was failed to send to server
-			RenderHost::connectionLost();
+            render.connectionLost();
 		}
 		else if( msg->type() == af::Msg::TTaskOutput )
 		{
-			RenderHost::listenFailed( msg->getAddress());
+            // Stop sending updates to this listener
+            render.listenFailed( msg->getAddress());
 		}
 		delete msg;
 		return;
@@ -203,96 +201,89 @@ printf("msgCase: "); msg->stdOut();
 		// Server sends back -1 id if a render with the same hostname already exists:
 		if( new_id == -1)
 		{
-			AFERRAR("Render with this hostname '%s' already registered.", af::Environment::getHostName().c_str())
+            AF_ERR << "Render with this hostname '" << af::Environment::getHostName() << "' already registered.";
 			AFRunning = false;
 		}
 		// Render was trying to register (its id==0) and server has send id>0
 		// This is the situation when client was sucessfully registered
-		else if((new_id > 0) && (RenderHost::getId() == 0))
+        else if( (new_id > 0) && (render.getId() == 0))
 		{
-			RenderHost::setRegistered( new_id);
+            render.setRegistered( new_id);
 		}
 		// Server sends back zero id on any error
 		else if ( new_id == 0 )
 		{
-			printf("Zero ID recieved, no such online render, re-connecting...\n");
-			RenderHost::connectionLost();
+            AF_LOG << "Zero ID recieved, no such online render, re-connecting...";
+            render.connectionLost();
 		}
 		// Bad case, should not ever happen, try to re-register.
-		else if ( RenderHost::getId() != new_id )
+        else if ( render.getId() != new_id )
 		{
-			AFERRAR("IDs mistatch: this %d != %d new, re-connecting...", RenderHost::getId(), new_id);
-			RenderHost::connectionLost();
+            AF_ERR << "IDs mistatch: this " << render.getId() << " != " << new_id << " new, re-connecting...";
+            render.connectionLost();
 		}
 		break;
 	}
 	case af::Msg::TVersionMismatch:
 	case af::Msg::TClientExitRequest:
 	{
-		printf("Render exit request received.\n");
+        AF_LOG << "Render exit request received.";
 		AFRunning = false;
 		break;
 	}
 	case af::Msg::TTask:
 	{
-		RenderHost::runTask( msg);
+        render.runTask( msg);
 		break;
 	}
 	case af::Msg::TClientRestartRequest:
 	{
-		printf("Restart client request, executing command:\n%s\n", af::Environment::getRenderExec().c_str());
+        AF_LOG << "Restart client request, executing command:\n" << af::Environment::getRenderExec();
 		af::launchProgram(af::Environment::getRenderExec());
 		AFRunning = false;
 		break;
 	}
-//   case af::Msg::TClientStartRequest:
-//   {
-//	  printf("Start client request, executing command:\n%s\n", af::Environment::getRenderExec().c_str());
-//	  af::launchProgram( af::Environment::getRenderExec());
-//	  break;
-//   }
 	case af::Msg::TClientRebootRequest:
 	{
 		AFRunning = false;
-		printf("Reboot request, executing command:\n%s\n", af::Environment::getRenderCmdReboot().c_str());
+        AF_LOG << "Reboot request, executing command:\n" << af::Environment::getRenderCmdReboot();
 		af::launchProgram( af::Environment::getRenderCmdReboot());
 		break;
 	}
 	case af::Msg::TClientShutdownRequest:
 	{
 		AFRunning = false;
-		printf("Shutdown request, executing command:\n%s\n", af::Environment::getRenderCmdShutdown().c_str());
+        AF_LOG << "Shutdown request, executing command:\n" << af::Environment::getRenderCmdShutdown();
 		af::launchProgram( af::Environment::getRenderCmdShutdown());
 		break;
 	}
 	case af::Msg::TClientWOLSleepRequest:
 	{
-		printf("Sleep request, executing command:\n%s\n", af::Environment::getRenderCmdWolSleep().c_str());
+        AF_LOG << "Sleep request, executing command:\n" << af::Environment::getRenderCmdWolSleep();
 		af::launchProgram( af::Environment::getRenderCmdWolSleep());
 		break;
 	}
 	case af::Msg::TRenderStopTask:
 	{
 		af::MCTaskPos taskpos( msg);
-		RenderHost::stopTask( taskpos);
+        render.stopTask( taskpos);
 		break;
 	}
 	case af::Msg::TRenderCloseTask:
 	{
 		af::MCTaskPos taskpos( msg);
-		RenderHost::closeTask( taskpos);
+        render.closeTask( taskpos);
 		break;
 	}
 	case af::Msg::TTaskListenOutput:
 	{
 		af::MCListenAddress mcaddr( msg);
-		RenderHost::listenTasks( mcaddr);
+        render.listenTasks( mcaddr);
 		break;
 	}
 	default:
 	{
-		AFERROR("Unknown message recieved:")
-		msg->v_stdOut();
+        AF_ERR << "Unknown message recieved: " << msg->v_generateInfoStream();
 		break;
 	}
 	}

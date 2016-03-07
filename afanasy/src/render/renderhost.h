@@ -14,65 +14,117 @@ class PyRes;
 
 class RenderHost: public af::Render
 {
-public:
+private:  // This is a singleton class
     RenderHost();
+
+public:
     ~RenderHost();
+    /// Get singleton instance
+    static RenderHost * getInstance();
 
-    inline static int  getId() { return ms_obj->af::Render::getId();}
-    inline static const std::string & getName() { return ms_obj->af::Render::getName();}
+    inline void acceptMessage( af::Msg * i_msg) { m_msgAcceptQueue->pushMsg( i_msg);}
+    void dispatchMessage( af::Msg * i_msg);
 
-    inline static bool noOutputRedirection() { return ms_no_output_redirection; }
+    /// Get incomming messages (blocking and not blocking versions)
+    inline af::Msg * acceptWait() { return m_msgAcceptQueue->popMsg( af::AfQueue::e_wait);    }
+    inline af::Msg * acceptTry()  { return m_msgAcceptQueue->popMsg( af::AfQueue::e_no_wait); }
 
-    inline static void acceptMessage(   af::Msg * i_msg) { ms_msgAcceptQueue->pushMsg( i_msg);}
-    static void dispatchMessage( af::Msg * i_msg);
+    /// Some getters and setters
+    inline bool noOutputRedirection() { return m_no_output_redirection; }
+    bool isConnected() { return m_connected;  }
+    void setRegistered( int i_id);
+    void setUpdateMsgType( int i_type);
 
-    inline static af::Msg * acceptWait() { return ms_msgAcceptQueue->popMsg( af::AfQueue::e_wait);    }
-    inline static af::Msg * acceptTry()  { return ms_msgAcceptQueue->popMsg( af::AfQueue::e_no_wait); }
+    /**
+     * @brief Switch the render host to a "connection lost" state to try to reconnect.
+     */
+    void connectionLost();
 
-    static bool isConnected() { return ms_connected;  }
-    static void setRegistered( int i_id);
-    static void connectionLost();
+    /**
+     * @brief Task monitoring cycle, checking how task processes are doing
+     */
+    void refreshTasks();
 
-    static void setUpdateMsgType( int i_type);
+    /**
+     * @brief Main cycle function, measuring host ressources and sending heartbeat to the server
+     */
+    void update();
 
-    static void refreshTasks();
+    /**
+     * @brief Get one of the render's task processes by its taskpos or its job/block/task/num
+     */
+    TaskProcess * getTask( const af::MCTaskPos & i_taskpos);
+    TaskProcess * getTask( int i_jobId, int i_blockNum, int i_taskNum, int i_Number);
 
-    static void update();
+    /**
+     * @brief Create a new TaskExec and then a TaskProcess from the provided
+     * message and add it to the render's tasks
+     * @param i_msg TTask message received from server
+     */
+    void runTask( af::Msg * i_msg);
 
-    static void runTask( af::Msg * i_msg);
+    /**
+     * @brief Stop a task process
+     * @param i_taskpos Index of the task process to stop
+     */
+    void stopTask( const af::MCTaskPos & i_taskpos);
 
-    static void stopTask( const af::MCTaskPos & i_taskpos);
+    /**
+     * @brief Close a task process
+     * @param i_taskpos Index of the task process to close
+     */
+    void closeTask( const af::MCTaskPos & i_taskpos);
 
-    static void closeTask( const af::MCTaskPos & i_taskpos);
+    /**
+     * @brief Write task output into a message
+     * @param i_taskpos Index of the task process to get output from
+     * @param o_msg Message into which writing the task output
+     */
+    void getTaskOutput( const af::MCTaskPos & i_taskpos, af::Msg * o_msg);
 
-    static void getTaskOutput( const af::MCTaskPos & i_taskpos, af::Msg * o_msg);
+    /**
+     * @brief Subscribe or unsubscribe to task updates, depending on what the
+     * `i_mcaddr` Msg Content asks for.
+     * @param i_mcaddr ListenAddress message content specifying what to listen to
+     */
+    void listenTasks( const af::MCListenAddress & i_mcaddr);
 
-    static void listenTasks( const af::MCListenAddress & i_mcaddr);
-
-    static void listenFailed( const af::Address & i_addr);
+    /**
+     * @brief Unsubscribe the given address from all task processes and send
+     * message to the subscriber to say so
+     * (not sure actually, but it sends something to the subscriber...)
+     * @param i_addr Address to unsubscribe
+     */
+    void listenFailed( const af::Address & i_addr);
 
 #ifdef WINNT
-    static void windowsMustDie();
+    void windowsMustDie();
 #endif
 
 private:
-    static RenderHost * ms_obj;
+    std::vector<std::string> m_windowsmustdie;
 
-    static std::vector<std::string> ms_windowsmustdie;
+    std::vector<PyRes*> m_pyres;
 
-    static std::vector<PyRes*> ms_pyres;
+    /// Queue of incoming messages
+    af::MsgQueue * m_msgAcceptQueue;
+    /// Active queue sending messages. Spawns another thread.
+    af::MsgQueue * m_msgDispatchQueue;
 
-    static af::MsgQueue * ms_msgAcceptQueue;
-    static af::MsgQueue * ms_msgDispatchQueue;
+    /// Whether the render is connected or not
+    bool m_connected;
 
-    static bool ms_connected;
+    /// Heartbeat message to sent at each update.
+    /// It is initially a `TRenderRegister` and as soon as the server
+    /// registered the render, it becomes a `TRenderUpdate`.
+    int m_updateMsgType;
 
-    static int ms_updateMsgType;
+    /// List of task processed being currently ran by the render
+    std::vector<TaskProcess*> m_tasks;
 
-    static std::vector<TaskProcess*> ms_tasks;
+    /// Whether the task outputs must be redirected. Used essentially by TaskProcess
+    bool m_no_output_redirection;
 
-    static bool ms_no_output_redirection;
-
-    DlMutex m_mutex;
-//    DlRWLock m_mutex;
+    /// Bool used to avoid measuring ressources at the first update (dirty hack, should be avoided)
+    bool m_first_time;
 };
