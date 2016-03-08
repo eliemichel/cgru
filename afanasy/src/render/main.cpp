@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 	uint64_t cycle = 0;
 	while( AFRunning)
 	{
-		// Collect all available incomming messages:
+        // Collect all available incomming messages:
         while( af::Msg * msg = render->acceptTry() )
             msgCase( msg, *render);
 
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
             render->update();
         }
 
-		cycle++;
+        cycle++;
 
         if( AFRunning)
 			af::sleep_sec(1);

@@ -1,6 +1,7 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
+#include <cstdio>
 #include <sstream>
 
 namespace af
@@ -25,15 +26,22 @@ private:
      */
     static const char * shorterFilename(const char *filename);
 
+public:
+    static std::stringstream *log_batch;
+
 private:
-    std::ostringstream m_ss;
+    std::ostringstream m_ss;  ///< accumulation stream
 };
+
+} // namespace af
 
 #define AF_DEBUG af::Logger(__func__, __FILE__, __LINE__, "DEBUG").stream()
 #define AF_LOG   af::Logger(__func__, __FILE__, __LINE__, "INFO").stream()
 #define AF_WARN  af::Logger(__func__, __FILE__, __LINE__, "WARNING").stream()
 #define AF_ERR   af::Logger(__func__, __FILE__, __LINE__, "ERROR").stream()
 
-} // namespace af
+#define AF_LOGBATCH_BEGIN() af::Logger::log_batch = new std::stringstream()
+#define AF_LOGBATCH_PRINT() std::cerr << af::Logger::log_batch->str() << std::flush
+#define AF_LOGBATCH_END() { delete af::Logger::log_batch; af::Logger::log_batch = NULL; }
 
 #endif // LOGGER_H

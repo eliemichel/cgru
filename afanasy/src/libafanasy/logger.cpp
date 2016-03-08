@@ -14,8 +14,16 @@ Logger::~Logger()
     // trim extra newlines
     while ( str.empty() == false && str[str.length() - 1] == '\n')
         str.resize(str.length() - 1);
-    fprintf(stderr, "%s\n", str.c_str());
-    fflush(stderr);
+
+    if (Logger::log_batch != NULL)
+    {
+        *Logger::log_batch << str << "\n";
+    }
+    else
+    {
+        fprintf(stderr, "%s\n", str.c_str());
+        fflush(stderr);
+    }
 }
 
 const char * Logger::shorterFilename(const char *filename)
@@ -27,3 +35,5 @@ const char * Logger::shorterFilename(const char *filename)
         --last_slash;
     return last_slash;
 }
+
+std::stringstream *Logger::log_batch = NULL;
