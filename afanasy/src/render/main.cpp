@@ -174,7 +174,7 @@ void msgCase( af::Msg * msg, RenderHost &render)
     if( NULL == msg)
 		return;
 
-    AF_DEBUG  << "msgCase: " << msg->v_generateInfoStream();
+    AF_DEBUG  << "msgCase: " << msg->v_generateInfoString();
 
     // Check not sended messages first, they were pushed back in accept queue:
 	if( msg->wasSendFailed())
