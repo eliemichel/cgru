@@ -224,7 +224,7 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
 	}
 
     int socketfd;
-    if( false == sp.get(i_address, socketfd))
+    if( false == sp.get(i_address, socketfd, true /* check */))
     {
         AF_ERR << "connect failure for msgType '" << af::Msg::TNAMES[i_msg->type()] << "': " << i_address;
         o_ok = false;
@@ -236,7 +236,7 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
 	{
         AF_ERR << "can't send message to client: " << i_address;
 		o_ok = false;
-        sp.error( i_address);
+        sp.close( i_address);
 		return NULL;
 	}
 
@@ -287,7 +287,7 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
     if( false == af::msgread( socketfd, o_msg))
     {
         AF_ERR << "Reading binary answer failed";
-        sp.error(i_address);
+        sp.close( i_address);
         delete o_msg;
         o_ok = false;
         return NULL;

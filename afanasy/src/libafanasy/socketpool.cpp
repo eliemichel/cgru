@@ -24,7 +24,7 @@ using namespace af;
 SocketPool::SocketPool()
 {}
 
-bool SocketPool::get(const af::Address & i_address, int &socketfd)
+bool SocketPool::get(const af::Address & i_address, int &socketfd, bool check)
 {
     struct sockaddr_storage addr;
     if( false == i_address.setSocketAddress( &addr))
@@ -39,16 +39,32 @@ bool SocketPool::get(const af::Address & i_address, int &socketfd)
         // But we did  not lock before because we assume initSocket to take some time
         // and try to reduce as much as possible the locking time.
         if( m_table.count(addr) == 0)
-        {
             m_table[addr] = std::make_pair<int, DlMutex>(socketfd, DlMutex());
-        }
+        else
+            closesocket(socketfd);
         m_global_mutex.Release();
     }
 
     std::pair<int, DlMutex> p = m_table[addr];
     DlMutex mutex = p.second;
     mutex.Acquire();
+
+    // The socket may have been closed while acquiring the mutex
+    if( m_table.count(addr) == 0)
+        return false;
+
     socketfd = p.first;
+
+    if( check)
+    {
+        if( false == SocketPool::checkSocket( socketfd))
+        {
+            // Close the socket and try to get it again, but with no checking
+            // this time to ensure that no infinite reccursion is possible
+            this->close( i_address);
+            return this->get( i_address, socketfd, false /* check */);
+        }
+    }
 
     return true;
 }
@@ -63,14 +79,14 @@ void SocketPool::release( const af::Address & i_address)
     mutex.Release();
 }
 
-void SocketPool::error( const af::Address & i_address)
+void SocketPool::close( const af::Address & i_address)
 {
     this->release( i_address);
     struct sockaddr_storage addr;
     assert(i_address.setSocketAddress( &addr));
-    // Close erroneous socket
+
     closesocket(m_table[addr].first);
-    // Remove socket from list. Next time we try to use it, it will be reopenned
+
     m_table.erase(addr);
 }
 
@@ -124,10 +140,19 @@ bool SocketPool::initSocket( const af::Address & i_address, int &socketfd)
     if( connect( socketfd, (struct sockaddr*)&addr, i_address.sizeofAddr()) != 0 )
     {
         AF_ERR << "connect: " << strerror(errno);
-        closesocket(socketfd);
+        ::closesocket(socketfd);
         return false;
     }
 
     AF_DEBUG << "connected";
     return true;
+}
+
+bool SocketPool::checkSocket( const int &socketfd)
+{
+    int err;
+    socklen_t err_len = sizeof(err);
+    if (getsockopt(socketfd, SOL_SOCKET, SO_ERROR, &err, &err_len) == -1)
+        return false;
+    return err == 0;
 }
