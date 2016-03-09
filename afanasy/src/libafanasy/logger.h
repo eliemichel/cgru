@@ -40,7 +40,7 @@ private:
 #define AF_WARN  af::Logger(__func__, __FILE__, __LINE__, "WARNING").stream()
 #define AF_ERR   af::Logger(__func__, __FILE__, __LINE__, "ERROR").stream()
 
-#define AF_LOGBATCH_BEGIN() { if (NULL != af::Logger::log_batch) delete af::Logger::log_batch; af::Logger::log_batch = new std::stringstream() }
+#define AF_LOGBATCH_BEGIN() { if (NULL != af::Logger::log_batch) delete af::Logger::log_batch; af::Logger::log_batch = new std::stringstream(); }
 #define AF_LOGBATCH_PRINT() std::cerr << af::Logger::log_batch->str() << std::flush
 #define AF_LOGBATCH_END() { if (NULL != af::Logger::log_batch) delete af::Logger::log_batch; af::Logger::log_batch = NULL; }
 

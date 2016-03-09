@@ -283,7 +283,7 @@ void msgCase( af::Msg * msg, RenderHost &render)
 	}
 	default:
 	{
-        AF_ERR << "Unknown message recieved: " << msg->v_generateInfoStream();
+        AF_ERR << "Unknown message recieved: " << msg->v_generateInfoString();
 		break;
 	}
 	}

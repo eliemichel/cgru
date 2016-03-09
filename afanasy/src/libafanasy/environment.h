@@ -4,6 +4,7 @@
 
 #include "name_af.h"
 #include "netif.h"
+#include "socketpool.h"
 
 namespace af
 {
@@ -188,6 +189,8 @@ public:
     static inline bool getSolvingUseUserPriority() { return solving_use_user_priority; }
     static inline bool getSolvingSimpler() { return solving_simpler; }
 
+    static inline SocketPool &getSocketPool() { return socket_pool; }
+
 
 
 private:
@@ -358,5 +361,7 @@ private:
     /// Task solving options
     static bool solving_use_user_priority;  ///< Whether task solving takes user priority into account or not
     static bool solving_simpler;            ///< Sort jobs by priority and creation time instead of using the "Need"
+
+    static SocketPool socket_pool;
 };
 }

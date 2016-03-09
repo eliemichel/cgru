@@ -16,12 +16,6 @@
 
 class DlMutex
 {
-	DlMutex(const DlMutex&);
-	void operator=(const DlMutex&);
-
-	/* Needs access to pthread mutex. */
-	friend class DlConditionVariable;
-
 public:
 	DlMutex();
 	~DlMutex();

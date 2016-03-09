@@ -11,14 +11,14 @@
 #define closesocket close
 #endif
 
-#include <map>
-
 #include "../include/afanasy.h"
 
+#include "logger.h"
 #include "address.h"
 #include "environment.h"
 #include "msg.h"
 #include "msgstat.h"
+#include "socketpool.h"
 
 #define AFOUTPUT
 #undef AFOUTPUT
@@ -209,141 +209,12 @@ int af::processHeader( af::Msg * io_msg, int i_bytes)
 	return af::Msg::SizeHeader;
 }
 
-class SocketPool
-{
-public:
-    SocketPool();
-
-    /**
-     * @brief get a socket connected to an address.
-     * If it does not exist, it is created on the fly.
-     * A socket got using this method MUST be released after usage with the
-     * release() method, otherwise no other process will be enable to use it.
-     * @param addr address to connect to
-     * @param socketfd returned socket connected to the given address
-     * @return whether everything went well
-     */
-    bool get(const af::Address & i_address, int &socketfd);
-    /**
-     * @brief release a socket previously retrieved using the get() method
-     * @param addr address indexing the socket to release
-     */
-    void release(const af::Address & i_address);
-
-private:
-    /**
-     * @brief initialize a socket and connect it
-     * @param addr address to bind the new socket to
-     * @param socketfd returned socket
-     * @return whether everything went well
-     */
-    static bool initSocket(const af::Address & i_address, int &socketfd);
-
-private:
-    /// Used to lock structure when new socket is added
-    DlMutex m_global_mutex;
-
-    /// For each address, store a connected socket along with a mutex to
-    /// prevent several processes to use the same socket simultaneously
-    std::map<struct sockaddr_storage, std::pair<int, DlMutex> > m_table;
-};
-
-SocketPool::SocketPool()
-{}
-
-bool SocketPool::get(const af::Address & i_address, int &socketfd)
-{
-    struct sockaddr_storage addr;
-    if( false == i_address.setSocketAddress( &addr))
-        return false;
-
-    if( m_table.count(addr) == 0)
-    {
-        if ( false == SocketPool::initSocket( i_address, socketfd))
-            return false;
-        m_global_mutex.Acquire();
-        m_global_mutex.Release();
-    }
-
-    std::pair<int, DlMutex> p = m_table[addr];
-    DlMutex mutex = p.second;
-    mutex.Acquire();
-    socketfd = p.first;
-}
-
-void SocketPool::release( const af::Address & i_address)
-{
-    struct sockaddr_storage addr;
-    assert(i_address.setSocketAddress( &addr));
-    assert(m_table.count(addr) != 0);  // do not release a socket that you did not get!
-
-    DlMutex mutex = m_table[addr].second;
-    mutex.Release();
-
-    af::socketDisconnect( socketfd);
-
-    // TODO: add a flush optoin? af::socketDisconnect( socketfd);
-}
-
-bool SocketPool::initSocket( const af::Address & i_address, int &socketfd)
-{
-    struct sockaddr_storage addr;
-    if( false == i_address.setSocketAddress( &addr))
-        return false;
-
-    socketfd = socket( addr.ss_family, SOCK_STREAM, 0);
-    if( socketfd < 0 )
-    {
-        AF_ERR << "socket: " << strerror(errno);
-        return false;
-    }
-
-    AF_DEBUG << "tying to connect to client";
-
-    if( af::Environment::getSockOpt_Dispatch_SO_RCVTIMEO_SEC() != -1 )
-    {
-        timeval so_timeo;
-        so_timeo.tv_usec = 0;
-        so_timeo.tv_sec = af::Environment::getSockOpt_Dispatch_SO_RCVTIMEO_SEC();
-        if( setsockopt( socketfd, SOL_SOCKET, SO_RCVTIMEO, WINNT_TOCHAR(&so_timeo), sizeof(so_timeo)) != 0)
-        {
-            AF_WARN << "set socket SO_RCVTIMEO option failed (" << strerror(errno) << ") " << i_address.v_generateInfoString();
-        }
-    }
-
-    if( af::Environment::getSockOpt_Dispatch_SO_SNDTIMEO_SEC() != -1 )
-    {
-        timeval so_timeo;
-        so_timeo.tv_usec = 0;
-        so_timeo.tv_sec = af::Environment::getSockOpt_Dispatch_SO_SNDTIMEO_SEC();
-        if( setsockopt( socketfd, SOL_SOCKET, SO_SNDTIMEO, WINNT_TOCHAR(&so_timeo), sizeof(so_timeo)) != 0)
-        {
-            AF_WARN << "set socket SO_SNDTIMEO option failed (" << strerror(errno) << ") " << i_address.v_generateInfoString();
-        }
-    }
-
-    if( af::Environment::getSockOpt_Dispatch_TCP_NODELAY() != -1 )
-    {
-        int nodelay = af::Environment::getSockOpt_Dispatch_TCP_NODELAY();
-        if( setsockopt( socketfd, IPPROTO_TCP, TCP_NODELAY, WINNT_TOCHAR(&nodelay), sizeof(nodelay)) != 0)
-        {
-           AF_WARN << "set socket TCP_NODELAY option failed (" << strerror(errno) << ") " << i_address.v_generateInfoString();
-        }
-    }
-
-    // connect to address
-    if( connect( socketfd, (struct sockaddr*)&addr, i_address.sizeofAddr()) != 0 )
-    {
-        AF_ERR << "connect: " << strerror(errno);
-        closesocket(socketfd);
-        return false;
-    }
-}
 
 af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address,
 						    bool & o_ok, af::VerboseMode i_verbose)
 {
 	o_ok = true;
+    af::SocketPool sp = af::Environment::getSocketPool();
 
 	if( i_address.isEmpty() )
 	{
@@ -353,7 +224,7 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
 	}
 
     int socketfd;
-    if( false == sp.get(i_address, socket))
+    if( false == sp.get(i_address, socketfd))
     {
         if( i_verbose == af::VerboseOn )
             AF_ERR << "connect failure for msgType '" << af::Msg::TNAMES[i_msg->type()] << "': " << i_address.v_generateInfoString();
@@ -408,7 +279,7 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
 			o_ok = false;
 		}
 
-        sp.release(client_addr);
+        sp.release(i_address);
 		return o_msg;
 	}
 
@@ -417,13 +288,13 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
     if( false == af::msgread( socketfd, o_msg))
     {
         AF_ERR << "Reading binary answer failed";
-        sp.release(client_addr);
+        sp.release(i_address);
         delete o_msg;
         o_ok = false;
         return NULL;
 	}
 
-    sp.release(client_addr);
+    sp.release(i_address);
 	return o_msg;
 }
 

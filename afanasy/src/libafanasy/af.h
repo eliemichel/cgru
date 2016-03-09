@@ -26,7 +26,6 @@ public:
 	virtual const std::string v_generateInfoString( bool full = false) const;
 	virtual void v_generateInfoStream( std::ostringstream & stream, bool full = false) const;
 
-
 protected:
 	void read( Msg * msg );
 	virtual void v_readwrite( Msg * msg );

@@ -168,6 +168,8 @@ std::string Environment::version_python;
 std::string Environment::version_gcc;
 std::string Environment::version_date;
 
+af::SocketPool Environment::socket_pool;
+
 void Environment::getVars( const JSON & i_obj)
 {
 	if( false == i_obj.IsObject())
