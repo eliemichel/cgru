@@ -26,11 +26,7 @@ SocketPool::SocketPool()
 
 bool SocketPool::get(const af::Address & i_address, int &socketfd, bool check)
 {
-    struct sockaddr_storage addr;
-    if( false == i_address.setSocketAddress( &addr))
-        return false;
-
-    if( m_table.count(addr) == 0)
+    if( m_table.count(i_address) == 0)
     {
         if ( false == SocketPool::initSocket( i_address, socketfd))
             return false;
@@ -38,19 +34,19 @@ bool SocketPool::get(const af::Address & i_address, int &socketfd, bool check)
         // We check again because another process could have populated the same address
         // But we did  not lock before because we assume initSocket to take some time
         // and try to reduce as much as possible the locking time.
-        if( m_table.count(addr) == 0)
-            m_table[addr] = std::make_pair<int, DlMutex>(socketfd, DlMutex());
+        if( m_table.count(i_address) == 0)
+            m_table[i_address] = std::make_pair<int, DlMutex>(socketfd, DlMutex());
         else
             closesocket(socketfd);
         m_global_mutex.Release();
     }
 
-    std::pair<int, DlMutex> p = m_table[addr];
+    std::pair<int, DlMutex> p = m_table[i_address];
     DlMutex mutex = p.second;
     mutex.Acquire();
 
     // The socket may have been closed while acquiring the mutex
-    if( m_table.count(addr) == 0)
+    if( m_table.count(i_address) == 0)
         return false;
 
     socketfd = p.first;
@@ -71,23 +67,24 @@ bool SocketPool::get(const af::Address & i_address, int &socketfd, bool check)
 
 void SocketPool::release( const af::Address & i_address)
 {
-    struct sockaddr_storage addr;
-    assert(i_address.setSocketAddress( &addr));
-    assert(m_table.count(addr) != 0);  // do not release a socket that you did not get!
+    assert(m_table.count(i_address) != 0);  // do not release a socket that you did not get!
 
-    DlMutex mutex = m_table[addr].second;
+    DlMutex mutex = m_table[i_address].second;
     mutex.Release();
 }
 
 void SocketPool::close( const af::Address & i_address)
 {
-    this->release( i_address);
-    struct sockaddr_storage addr;
-    assert(i_address.setSocketAddress( &addr));
+    assert(m_table.count(i_address) != 0);  // do not release a socket that you did not get!
 
-    closesocket(m_table[addr].first);
+    std::pair<int, DlMutex> p = m_table[i_address];
+    ::close(p.first);
 
-    m_table.erase(addr);
+    m_table.erase(i_address);
+
+    p.second.Release();
+    AF_DEBUG << "closed socket to " << i_address;
+    assert(m_table.count(i_address) == 0);
 }
 
 bool SocketPool::initSocket( const af::Address & i_address, int &socketfd)
@@ -140,7 +137,7 @@ bool SocketPool::initSocket( const af::Address & i_address, int &socketfd)
     if( connect( socketfd, (struct sockaddr*)&addr, i_address.sizeofAddr()) != 0 )
     {
         AF_ERR << "connect: " << strerror(errno);
-        ::closesocket(socketfd);
+        ::close(socketfd);
         return false;
     }
 

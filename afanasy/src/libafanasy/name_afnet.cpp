@@ -242,7 +242,8 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
 
 	if( false == i_msg->isReceiving())
 	{
-        sp.release( i_address);
+        //sp.release( i_address);
+        sp.close( i_address);
 		return NULL;
 	}
 
@@ -278,7 +279,8 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
 			o_ok = false;
 		}
 
-        sp.release(i_address);
+        //sp.release(i_address);
+        sp.close( i_address);
 		return o_msg;
 	}
 
@@ -293,7 +295,8 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
         return NULL;
 	}
 
-    sp.release(i_address);
+    //sp.release(i_address);
+    sp.close( i_address);
 	return o_msg;
 }
 

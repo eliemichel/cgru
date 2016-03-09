@@ -2,32 +2,12 @@
 #define SOCKETPOOL_H
 
 #include "common/dlMutex.h"
+#include "address.h"
 
 #include <cstring>
 #include <map>
 
 namespace af {
-
-class Address;
-
-/**
- * StructCompare is used as a comparator when using structs as std::map key.
- * It performs a raw data comparison as if it was a string, so in lexicographic order.
- *
- * ex: if when using `std::map<A, B>`, the compiler complains because type `A`
- * does not implement comparison operator, you can use
- * `std::map<A, B, StructCompare<A> >` instead.
- * Don't do this with big structs, and make sure that the whole struct data
- * will remain a good identifier.
- */
-template<typename T>
-struct StructCompare
-{
-    bool operator() (const T &a, const T &b) const
-    {
-        return std::strncmp((char*)(&a), (char*)(&b), sizeof(T)) < 0;
-    }
-};
 
 /**
  * @brief Thread-safe pool of sockets openned toward different targets.
@@ -121,7 +101,7 @@ private:
 
     /// For each address, store a connected socket along with a mutex to
     /// prevent several processes to use the same socket simultaneously
-    std::map<struct sockaddr_storage, std::pair<int, DlMutex>, StructCompare<struct sockaddr_storage> > m_table;
+    std::map<af::Address, std::pair<int, DlMutex>, AddressCompare> m_table;
 };
 
 } // namespace af

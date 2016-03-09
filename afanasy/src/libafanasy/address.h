@@ -107,4 +107,19 @@ struct AddressMask
 	int  m_len;
 	char m_bytes[Address::ms_addrdatalength];    ///< IP Mask.
 };
+
+
+/**
+ * AddressCompare is used as a comparator when using af::Address as std::map key
+ * Should be kept in sync with Adress::equal.
+ */
+struct AddressCompare
+{
+    bool operator() (const Address &a, const Address &b) const
+    {
+        return a.getFamily() < b.getFamily()
+            || a.getPortHBO() < b.getPortHBO()
+            || memcmp( a.getAddrData(), b.getAddrData(), Address::ms_addrdatalength) < 0;
+    }
+};
 }
