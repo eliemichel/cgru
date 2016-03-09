@@ -37,8 +37,9 @@ public:
     /**
      * @brief get a socket connected to an address.
      * If it does not exist, it is created on the fly.
-     * A socket got using this method MUST be released after usage with the
-     * release() method, otherwise no other process will be enable to use it.
+     * A socket got using this method MUST be released after usage with
+     * either release() or error(), otherwise no other process will be enable
+     * to use it.
      * @param addr address to connect to
      * @param socketfd returned socket connected to the given address
      * @return whether everything went well
@@ -49,6 +50,14 @@ public:
      * @param addr address indexing the socket to release
      */
     void release(const af::Address & i_address);
+    /**
+     * @brief signal an error with the provided socket.
+     * This will release it and handle the issue. Basically, it will close the
+     * socket and remove the entry in the pool so that a new socket will be
+     * openned at the next attempt
+     * @param i_address
+     */
+    void error( const af::Address & i_address);
 
 private:
     /**

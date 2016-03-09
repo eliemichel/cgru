@@ -179,9 +179,10 @@ void msgCase( af::Msg * msg, RenderHost &render)
     // Check not sended messages first, they were pushed back in accept queue:
 	if( msg->wasSendFailed())
 	{
+        AF_WARN << "Message sending failed: " << msg->v_generateInfoString();
 		if( msg->getAddress().equal( af::Environment::getServerAddress()))
 		{
-			// Message was failed to send to server
+            AF_DEBUG << "Message was failed to send to server";
             render.connectionLost();
 		}
 		else if( msg->type() == af::Msg::TTaskOutput )

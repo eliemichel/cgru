@@ -12,6 +12,8 @@
 
 #include "../include/afanasy.h"
 
+#include <sstream>
+
 #include "socketpool.h"
 #include "logger.h"
 #include "address.h"
@@ -33,6 +35,13 @@ bool SocketPool::get(const af::Address & i_address, int &socketfd)
         if ( false == SocketPool::initSocket( i_address, socketfd))
             return false;
         m_global_mutex.Acquire();
+        // We check again because another process could have populated the same address
+        // But we did  not lock before because we assume initSocket to take some time
+        // and try to reduce as much as possible the locking time.
+        if( m_table.count(addr) == 0)
+        {
+            m_table[addr] = std::make_pair<int, DlMutex>(socketfd, DlMutex());
+        }
         m_global_mutex.Release();
     }
 
@@ -40,6 +49,8 @@ bool SocketPool::get(const af::Address & i_address, int &socketfd)
     DlMutex mutex = p.second;
     mutex.Acquire();
     socketfd = p.first;
+
+    return true;
 }
 
 void SocketPool::release( const af::Address & i_address)
@@ -50,6 +61,17 @@ void SocketPool::release( const af::Address & i_address)
 
     DlMutex mutex = m_table[addr].second;
     mutex.Release();
+}
+
+void SocketPool::error( const af::Address & i_address)
+{
+    this->release( i_address);
+    struct sockaddr_storage addr;
+    assert(i_address.setSocketAddress( &addr));
+    // Close erroneous socket
+    closesocket(m_table[addr].first);
+    // Remove socket from list. Next time we try to use it, it will be reopenned
+    m_table.erase(addr);
 }
 
 bool SocketPool::initSocket( const af::Address & i_address, int &socketfd)
@@ -65,7 +87,7 @@ bool SocketPool::initSocket( const af::Address & i_address, int &socketfd)
         return false;
     }
 
-    AF_DEBUG << "trying to connect to client";
+    AF_DEBUG << "trying to connect to " << i_address;
 
     if( af::Environment::getSockOpt_Dispatch_SO_RCVTIMEO_SEC() != -1 )
     {
@@ -74,7 +96,7 @@ bool SocketPool::initSocket( const af::Address & i_address, int &socketfd)
         so_timeo.tv_sec = af::Environment::getSockOpt_Dispatch_SO_RCVTIMEO_SEC();
         if( setsockopt( socketfd, SOL_SOCKET, SO_RCVTIMEO, WINNT_TOCHAR(&so_timeo), sizeof(so_timeo)) != 0)
         {
-            AF_WARN << "set socket SO_RCVTIMEO option failed (" << strerror(errno) << ") " << i_address.v_generateInfoString();
+            AF_WARN << "set socket SO_RCVTIMEO option failed (" << strerror(errno) << ") " << i_address;
         }
     }
 
@@ -85,7 +107,7 @@ bool SocketPool::initSocket( const af::Address & i_address, int &socketfd)
         so_timeo.tv_sec = af::Environment::getSockOpt_Dispatch_SO_SNDTIMEO_SEC();
         if( setsockopt( socketfd, SOL_SOCKET, SO_SNDTIMEO, WINNT_TOCHAR(&so_timeo), sizeof(so_timeo)) != 0)
         {
-            AF_WARN << "set socket SO_SNDTIMEO option failed (" << strerror(errno) << ") " << i_address.v_generateInfoString();
+            AF_WARN << "set socket SO_SNDTIMEO option failed (" << strerror(errno) << ") " << i_address;
         }
     }
 
@@ -94,7 +116,7 @@ bool SocketPool::initSocket( const af::Address & i_address, int &socketfd)
         int nodelay = af::Environment::getSockOpt_Dispatch_TCP_NODELAY();
         if( setsockopt( socketfd, IPPROTO_TCP, TCP_NODELAY, WINNT_TOCHAR(&nodelay), sizeof(nodelay)) != 0)
         {
-           AF_WARN << "set socket TCP_NODELAY option failed (" << strerror(errno) << ") " << i_address.v_generateInfoString();
+           AF_WARN << "set socket TCP_NODELAY option failed (" << strerror(errno) << ") " << i_address;
         }
     }
 
@@ -105,4 +127,7 @@ bool SocketPool::initSocket( const af::Address & i_address, int &socketfd)
         closesocket(socketfd);
         return false;
     }
+
+    AF_DEBUG << "connected";
+    return true;
 }

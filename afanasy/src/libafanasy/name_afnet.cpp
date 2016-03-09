@@ -214,7 +214,7 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
 						    bool & o_ok, af::VerboseMode i_verbose)
 {
 	o_ok = true;
-    af::SocketPool sp = af::Environment::getSocketPool();
+    af::SocketPool &sp = af::Environment::getSocketPool();
 
 	if( i_address.isEmpty() )
 	{
@@ -226,8 +226,7 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
     int socketfd;
     if( false == sp.get(i_address, socketfd))
     {
-        if( i_verbose == af::VerboseOn )
-            AF_ERR << "connect failure for msgType '" << af::Msg::TNAMES[i_msg->type()] << "': " << i_address.v_generateInfoString();
+        AF_ERR << "connect failure for msgType '" << af::Msg::TNAMES[i_msg->type()] << "': " << i_address;
         o_ok = false;
         return NULL;
     }
@@ -235,9 +234,9 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
     // send
 	if( false == af::msgwrite( socketfd, i_msg))
 	{
-        AF_ERR << "can't send message to client: " << i_address.v_generateInfoString();
+        AF_ERR << "can't send message to client: " << i_address;
 		o_ok = false;
-        sp.release( i_address);
+        sp.error( i_address);
 		return NULL;
 	}
 
@@ -275,7 +274,7 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
 		}
 		else
 		{
-			AFERROR("msgsendtoaddress: Reading JSON answer failed.")
+            AF_ERR << "Reading JSON answer failed.";
 			o_ok = false;
 		}
 
@@ -288,7 +287,7 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
     if( false == af::msgread( socketfd, o_msg))
     {
         AF_ERR << "Reading binary answer failed";
-        sp.release(i_address);
+        sp.error(i_address);
         delete o_msg;
         o_ok = false;
         return NULL;
