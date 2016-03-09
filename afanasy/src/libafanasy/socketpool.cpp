@@ -57,6 +57,7 @@ bool SocketPool::get(const af::Address & i_address, int &socketfd, bool check)
         {
             // Close the socket and try to get it again, but with no checking
             // this time to ensure that no infinite reccursion is possible
+            AF_DEBUG << "close";
             this->close( i_address);
             return this->get( i_address, socketfd, false /* check */);
         }

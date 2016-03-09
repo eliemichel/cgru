@@ -33,26 +33,18 @@ int readdata( int fd, char* data, int data_len, int buffer_maxlen)
 	int bytes = 0;
 	while( bytes < data_len )
 	{
-#ifdef WINNT
-		int r = recv( fd, data+bytes, buffer_maxlen-bytes, 0);
-#else
-		int r = read( fd, data+bytes, buffer_maxlen-bytes);
-#endif
+        int r = recv( fd, data+bytes, buffer_maxlen-bytes, MSG_WAITFORONE);
 		if( r < 0)
 		{
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                // Display debug about sender
-                struct sockaddr_in addr;
-                socklen_t addrlen = sizeof(struct sockaddr_in);
-                memset(&addr, 0, addrlen);
-                if (getpeername(fd, (struct sockaddr*) &addr, &addrlen) > -1) {
-                    AFERROR(af::time2str() + std::string(" EWOULDBLOCK: peer addr: ") + std::string(inet_ntoa(addr.sin_addr)) + ":" + af::itos(ntohs(addr.sin_port)));
-                } else {
-                    AFERROR(af::time2str() + std::string(" EWOULDBLOCK: unable to get peer name"));
-                }
+            switch (errno)
+            {
+            case EWOULDBLOCK:
+                af:sleep(1);
+                continue;
+            default:
+                AF_ERR << "recv: " << strerror(errno);
+                return -1;
             }
-			AFERRPE("readdata: read");
-			return -1;
 		}
 		AFINFA("readdata: read %d bytes.\n", r);
 		if( r == 0) return bytes;
@@ -242,8 +234,7 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
 
 	if( false == i_msg->isReceiving())
 	{
-        //sp.release( i_address);
-        sp.close( i_address);
+        sp.release( i_address);
 		return NULL;
 	}
 
@@ -279,8 +270,7 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
 			o_ok = false;
 		}
 
-        //sp.release(i_address);
-        sp.close( i_address);
+        sp.release(i_address);
 		return o_msg;
 	}
 
@@ -295,8 +285,7 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
         return NULL;
 	}
 
-    //sp.release(i_address);
-    sp.close( i_address);
+    sp.release(i_address);
 	return o_msg;
 }
 

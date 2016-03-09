@@ -13,6 +13,7 @@
 
 #include "../include/afanasy.h"
 
+#include "../libafanasy/logger.h"
 #include "../libafanasy/address.h"
 #include "../libafanasy/environment.h"
 #include "../libafanasy/msg.h"
@@ -46,10 +47,12 @@ void threadProcessMsg( void * i_args)
 {
 	ThreadArgs * threadArgs = (ThreadArgs*)i_args;
 
-	// Message processing in separate function
-	// to ensure that descriptor closed and
-	// arguments are deleted in any way.
-	uint32_t response_type = processMessage( threadArgs);
+    uint32_t response_type = 0;
+    // While there is no error, try to keep the connection alive
+    while( response_type != -1)
+        response_type = processMessage( threadArgs);
+
+    AF_LOG << "Connection with client lost";
 
 	af::socketDisconnect( threadArgs->sd, response_type);
 
