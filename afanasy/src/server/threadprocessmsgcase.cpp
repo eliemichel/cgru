@@ -505,7 +505,7 @@ af::Msg* threadProcessMsgCase( ThreadArgs * i_args, af::Msg * i_msg)
 			JobAf* job = jobsIt.getJob( tp.getJobId());
 			if( job == NULL )
 			{
-				o_msg_response = af::msgString("Error: Job is NULL.");
+                o_msg_response = af::Msg::msgString("Error: Job is NULL.");
 				AFCommon::QueueLogError("Jobs is NULL");
 				break;
 			}
@@ -518,7 +518,7 @@ af::Msg* threadProcessMsgCase( ThreadArgs * i_args, af::Msg * i_msg)
 			{
 				if( msg_request_render )
 					delete msg_request_render;
-				o_msg_response = af::msgString( error);
+                o_msg_response = af::Msg::msgString( error);
 				AFCommon::QueueLogError( error);
 				break;
 			}
@@ -543,7 +543,7 @@ af::Msg* threadProcessMsgCase( ThreadArgs * i_args, af::Msg * i_msg)
 				error += "\nIf there is 'update timeout' check firewall.";
 				error += "\nClient should listen a port and server should be able to connect to it.";
 				//AFCommon::QueueLogError( error);
-				o_msg_response = af::msgString( error);
+                o_msg_response = af::Msg::msgString( error);
 			}
 		}
 		else if( msg_request_render)
@@ -557,7 +557,7 @@ af::Msg* threadProcessMsgCase( ThreadArgs * i_args, af::Msg * i_msg)
 			if( o_msg_response == NULL )
 			{
 				error = "Retrieving output from render failed. See server logs for details.";
-				o_msg_response = af::msgString( error);
+                o_msg_response = af::Msg::msgString( error);
 				//AFCommon::QueueLogError( error);
 			}
 			delete msg_request_render;
@@ -566,7 +566,7 @@ af::Msg* threadProcessMsgCase( ThreadArgs * i_args, af::Msg * i_msg)
 		{
 			if( error.size())
 			{
-				o_msg_response = af::msgString( error);
+                o_msg_response = af::Msg::msgString( error);
 				AFCommon::QueueLogError("TTaskOutputRequest: Neiter message nor filename\n" + error);
 			}
 			else

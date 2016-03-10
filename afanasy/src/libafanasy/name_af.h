@@ -231,8 +231,6 @@ namespace af
 	/// Solve host address.
 	const af::Address solveNetName( const std::string & i_name, int i_port, int i_type = AF_UNSPEC, VerboseMode i_verbose = VerboseOff);
 
-	Msg * msgString( const std::string & i_str);
-
 	// Read message header from message buffer;
 	int processHeader( af::Msg * io_msg, int i_bytes);
 
@@ -244,8 +242,8 @@ namespace af
 	/** Return true if success.**/
 	bool msgwrite( int i_desc, const af::Msg * i_msg);
 
-	/// Send a message to all its addresses and receive an answer if needed
-	Msg * msgsend( Msg * i_msg, bool & o_ok, VerboseMode i_verbose);
+    /// Send a message to all its addresses and receive an answer if needed
+    Msg * msgsend( Msg * i_msg, bool & o_ok, VerboseMode i_verbose);
 
 	/// Close socket
 	void socketDisconnect( int i_sd, uint32_t i_response_type = -1);

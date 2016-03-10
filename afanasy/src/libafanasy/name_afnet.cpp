@@ -26,48 +26,53 @@
 
 af::MsgStat mgstat;
 
-/// Read data from file descriptor. Return bytes than was written or -1 on any error and prints an error in \c stderr.
+/**
+ * @brief Read data from file descriptor. This call is blocking.
+ * @param fd file descriptor to read from
+ * @param data buffer to write read data to
+ * @param data_len length of data to read
+ * @param buffer_maxlen buffer length
+ * @return bytes than was written or -1 on any error
+ */
 int readdata( int fd, char* data, int data_len, int buffer_maxlen)
 {
-	AFINFA("readdata: trying to recieve %d bytes.\n", data_len);
-	int bytes = 0;
-	while( bytes < data_len )
+    assert(buffer_maxlen >= data_len); // This call will never end! (or with EINVAL)
+    //AF_DEBUG << "trying to recieve " << data_len << " bytes.";
+    int read_bytes = 0;
+    while( read_bytes < data_len )
 	{
-        int r = recv( fd, data+bytes, buffer_maxlen-bytes, MSG_WAITFORONE);
+        int r = recv( fd, data + read_bytes, buffer_maxlen - read_bytes, MSG_WAITALL);
 		if( r < 0)
 		{
-            switch (errno)
-            {
-            case EWOULDBLOCK:
-                af:sleep(1);
+            if (errno == EWOULDBLOCK)
                 continue;
-            default:
-                AF_ERR << "recv: " << strerror(errno);
-                return -1;
-            }
+            AF_ERR << "recv: " << strerror(errno);
+            return -1;
 		}
-		AFINFA("readdata: read %d bytes.\n", r);
-		if( r == 0) return bytes;
-		bytes += r;
+        //AF_DEBUG << "read " << r << " bytes.";
+        if( r == 0) return read_bytes;
+        read_bytes += r;
 	}
 
-	return bytes;
+    return read_bytes;
 }
 
-/// Write data to file descriptor. Return \c false on any arror and prints an error in \c stderr.
+/**
+ * @brief Write data to file descriptor.
+ * @param fd file to write into
+ * @param data data buffer to be written
+ * @param len length of the data buffer
+ * @return status
+ */
 bool writedata( int fd, const char * data, int len)
 {
 	int written_bytes = 0;
 	while( written_bytes < len)
 	{
-#ifdef WINNT
-		int w = send( fd, data+written_bytes, len, 0);
-#else
-		int w = write( fd, data+written_bytes, len);
-#endif
+        int w = send( fd, data+written_bytes, len, MSG_NOSIGNAL);
 		if( w < 0)
 		{
-			AFERRPE("name_afnet.cpp writedata:");
+            AF_ERR << "send: " << strerror(errno);
 			return false;
 		}
 		written_bytes += w;
@@ -75,7 +80,13 @@ bool writedata( int fd, const char * data, int len)
 	return true;
 }
 
-// Return header offset or -1, if it was not recognized.
+/**
+ * @brief Parse header and build message depending on this
+ * Shouldn't this be a method of Msg?
+ * @param io_msg message to build and from which reading the buffer
+ * @param i_bytes number of bytes available in buffer
+ * @return header offset, or -1 if it was not recognized.
+ */
 int af::processHeader( af::Msg * io_msg, int i_bytes)
 {
 	//printf("name_afnet.cpp processHeader: Received %d bytes:\n", i_bytes);
@@ -85,42 +96,29 @@ int af::processHeader( af::Msg * io_msg, int i_bytes)
 	// Process HTTP header:
 	if( strncmp( buffer, "POST", 4) == 0 )
 	{
-		//writedata( 1, buffer, i_bytes); write(1,"\n",1);
-		offset = 4;
+        offset += 4;
 		int size;
 		bool header_processed = false;
-		for( offset = 4; offset < i_bytes; offset++)
+        for( offset++ ; offset < i_bytes; ++offset)
 		{
-			// Look for line end:
-			if( buffer[offset] == '\n' )
+            // If we are at the beginning of a line:
+            if( buffer[offset - 1] == '\n' )
 			{
-				// Go to line begin:
-				offset++;
-				if( offset == i_bytes )
-					break;
-
-				// If header found, body can start in the same data packet:
+                // If header found, body can start in the same data packet:
 				if( header_processed && ( buffer[offset] == '{' ))
-				{
-					//write(1,"\nBODY FOUND:\n", 15);
-					//write(1, buffer+offset, i_bytes - offset);
-					//write(1,"\n",1);
-					break;
-				}
+                    break;
 
 				// Look for a special header:
-				if( strncmp("AFANASY: ", buffer+offset, 9) == 0)
+                if( strncmp("AFANASY: ", buffer + offset, 9) == 0)
 				{
-					//printf("\nAFANASY FOUND:\n");
-					offset += 9;
+                    offset += 9;
 					if( 1 == sscanf( buffer + offset, "%d", &size))
 					{
-						//printf("\nHEADER FOUND: size=%d\n", size);
-						header_processed = true;
+                        header_processed = true;
 					}
 					else
 					{
-						AFERROR("HTTP POST request has a bad AFANASY header.")
+                        AF_ERR << "HTTP POST request has a bad AFANASY header.";
 						return -1;
 					}
 				}
@@ -128,71 +126,48 @@ int af::processHeader( af::Msg * io_msg, int i_bytes)
 		}
 
 		// If header found, construct message:
-		if( header_processed )
+        if( false == header_processed )
 		{
-			io_msg->setHeader( af::Msg::THTTP, size, offset, i_bytes);
-			return offset;
+            AF_ERR << "HTTP POST request header was not recongnized";
+            return -1;
 		}
 
-		// Header not recongnized:
-		AFERROR("HTTP POST request was not recongnized.")
-		return -1;
+        io_msg->setHeader( af::Msg::THTTP, size, offset, i_bytes);
+        return offset;
 	}
 
 	// Simple header for JSON (used for example in python api and afcmd)
 	if( strncmp("AFANASY", buffer, 7) == 0 )
 	{
-		//writedata( 1, buffer+offset, i_bytes);printf("\n");
-		offset += 7;
+        offset += 7;
 		int size;
-		int num = sscanf( buffer + offset, "%d", &size);
-		//printf("\n sscanf=%d\n",num);
-		if( num == 1 )
+        if( 1 == sscanf( buffer + offset, "%d", &size))
 		{
-			while( ++offset < i_bytes )
+            for( ; offset < i_bytes ; ++offset)
 			{
 				if( strncmp( buffer+offset, "JSON", 4) == 0)
 				{
 					offset += 4;
-					while( offset < i_bytes )
-					{
-						if( buffer[offset] == '{' )
-						{
-							break;
-						}
-						else
-						{
-							offset++;
-							//printf("FOUND: size=%d Offset=%d:\n", size, offset);
-							//write(1, buffer, offset);
-							//write(1, buffer+offset, i_bytes - offset);
-							//write(1,"\n",1);
-//							io_msg->setHeader( af::Msg::TJSON, size, offset, i_bytes);
-							//return false;
-							//io_msg->stdOutData();
-//							return offset;
-						}
-					}
+                    while(offset < i_bytes && buffer[offset] != '{')
+                        ++offset;
 					io_msg->setHeader( af::Msg::TJSON, size, offset, i_bytes);
 					return offset;
 				}
 			}
 
 			// Header not recongnized:
-			AFERROR("JSON message header was not recongnized.")
+            AF_ERR << "JSON message header was not recongnized.";
 			return -1;
 		}
 	}
 
 	if( strncmp( buffer, "GET", 3) == 0 )
 	{
-		//writedata( 1, buffer, i_bytes);
-		char * get = new char[i_bytes];
+        char * get = new char[i_bytes];
 		memcpy( get, buffer, i_bytes);
 		io_msg->setData( i_bytes, get, af::Msg::THTTPGET);
 		delete []  get;
 
-		//printf("i_bytes = %d, msg data len = %d\n", i_bytes, io_msg->dataLen());
 		return 0; // no offset, reading finished
 	}
 
@@ -384,18 +359,22 @@ const af::Address af::solveNetName( const std::string & i_name, int i_port, int 
 	return af::Address();
 }
 
+/**
+ * @brief Read message from file descriptor. This call is blocking.
+ * @param desc socket to read from
+ * @param msg message to build with a correctly allocated buffer
+ * @return status
+ */
 bool af::msgread( int desc, af::Msg* msg)
 {
-AFINFO("af::msgread:\n");
-
 	char * buffer = msg->buffer();
-	//
-	// Read message header data
+
+    // Read message header data
 	int bytes = ::readdata( desc, buffer, af::Msg::SizeHeader, af::Msg::SizeBuffer );
 
 	if( bytes < af::Msg::SizeHeader)
 	{
-		AFERRAR("af::msgread: can't read message header, bytes = %d (< Msg::SizeHeader).", bytes)
+        AF_ERR << "can't read message header, bytes = " << bytes << " (< Msg::SizeHeader = " << Msg::SizeHeader << ")";
 		msg->setInvalid();
 		return false;
 	}
@@ -405,80 +384,91 @@ AFINFO("af::msgread:\n");
 	if( header_offset < 0)
 		return false;
 
-	//
 	// Read message data if any
 	if( msg->type() >= af::Msg::TDATA)
 	{
-		buffer = msg->buffer(); // buffer may be changed to fit new size
+        buffer = msg->buffer(); // buffer size may have been changed when processing header
 		bytes -= header_offset;
 		int readlen = msg->dataLen() - bytes;
 		if( readlen > 0)
 		{
-//printf("Need to read more %d bytes of data:\n", readlen);
-			bytes = ::readdata( desc, buffer + af::Msg::SizeHeader + bytes, readlen, readlen);
+            bytes = ::readdata( desc, buffer + af::Msg::SizeHeader + bytes, readlen, readlen);
 			if( bytes < readlen)
 			{
-				AFERRAR("af::msgread: read message data: ( bytes < readlen : %d < %d)", bytes, readlen)
+                AF_ERR << "read message data: ( bytes < readlen : " << bytes << " < " << readlen << ")";
 				msg->setInvalid();
 				return false;
 			}
 		}
 	}
-//msg->stdOutData();
+
 	mgstat.put( msg->type(), msg->writeSize());
 
 	return true;
 }
 
+/**
+ * @brief Write a message to a file descriptor. This call is blocking.
+ * Prepend special header when sending as HTTP of afanasy's JSON format
+ * @param i_desc file to write into
+ * @param i_msg message to write
+ * @return status
+ */
 bool af::msgwrite( int i_desc, const af::Msg * i_msg)
 {
+    size_t content_length = i_msg->writeSize() - i_msg->getHeaderOffset();
+
 	if( i_msg->type() == af::Msg::THTTP )
 	{
-		char buffer[1024];
-		sprintf( buffer, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\nContent-Length: %d\r\n\r\n",
-			i_msg->writeSize() - i_msg->getHeaderOffset());
-		//printf("%s\n", buffer);
-		::writedata( i_desc, buffer, strlen( buffer));
-/*
-		::writedata( i_desc, "HTTP/1.1 200 OK\r\n", 17);
-		::writedata( i_desc, "Content-Type: application/json\r\n", 32);
-//		                      1234567890123456789012345678901234567890
-//		                      0         1         2         3
-		::writedata( i_desc, "\r\n", 2);
-*/
+        std::stringstream header;
+        header << "HTTP/1.1 200 OK\r\n"
+               << "Content-Type: application/json\r\n"
+               << "Connection: close\r\n"
+               << "Content-Length: " << content_length << "\r\n"
+               << "\r\n";
+        if (false == ::writedata( i_desc, header.str().data(), header.str().length()))
+            return false;
 	}
 	else if( i_msg->type() == af::Msg::TJSON )
 	{
-		char buffer[1024];
-		sprintf( buffer, "AFANASY %d JSON",
-			i_msg->writeSize() - i_msg->getHeaderOffset());
-		//printf("%s\n", buffer);
-		::writedata( i_desc, buffer, strlen( buffer));
+        std::stringstream header;
+        header << "AFANASY " << content_length << " JSON";
+        if (false == ::writedata( i_desc, header.str().data(), header.str().length()))
+            return false;
 	}
 
-	if( false == ::writedata( i_desc, i_msg->buffer() + i_msg->getHeaderOffset(), i_msg->writeSize() - i_msg->getHeaderOffset() ))
-	{
-		AFERROR("af::msgwrite: Error writing message.")
-		return false;
-	}
+    if( false == ::writedata( i_desc, i_msg->buffer() + i_msg->getHeaderOffset(), content_length ))
+        return false;
 
 	mgstat.put( i_msg->type(), i_msg->writeSize());
 
 	return true;
 }
 
+
+/**
+ * @brief Send a message. This call is blocking.
+ * The message contains information about the addresses to send it to.
+ * If there is only one address, it will potentially wait for an answer and
+ * return it.
+ * If there are several addresses to send the message to, it is broadcasted and
+ * no answer is returned.
+ * @param i_msg message to send
+ * @param o_ok returned status (whether everything went good)
+ * @param i_verbose verbose mode
+ * @return response from destination
+ */
 af::Msg * af::msgsend( Msg * i_msg, bool & o_ok, VerboseMode i_verbose )
 {
 	if( i_msg->isReceiving() && ( i_msg->addressesCount() > 0 ))
 	{
-		AFERROR("af::msgsend: Receiving message has several addresses.")
+        AF_WARN << "Receiving message has several addresses: " << i_msg;
 	}
 
 	if( i_msg->addressIsEmpty() && ( i_msg->addressesCount() == 0 ))
 	{
-		AFERROR("af::msgsend: Message has no addresses to send to.")
+        AF_ERR << "Message has no addresses to send to: " << i_msg;
 		o_ok = false;
-		i_msg->v_stdOut();
 		return NULL;
 	}
 
@@ -494,9 +484,8 @@ af::Msg * af::msgsend( Msg * i_msg, bool & o_ok, VerboseMode i_verbose )
 
 	bool ok;
 	const std::list<af::Address> * addresses = i_msg->getAddresses();
-	std::list<af::Address>::const_iterator it = addresses->begin();
-	std::list<af::Address>::const_iterator it_end = addresses->end();
-	while( it != it_end)
+    std::list<af::Address>::const_iterator it;
+    for(it = addresses->begin() ; it != addresses->end() ; it++)
 	{
 		::msgsendtoaddress( i_msg, *it, ok, i_verbose);
 		if( false == ok )
@@ -505,15 +494,20 @@ af::Msg * af::msgsend( Msg * i_msg, bool & o_ok, VerboseMode i_verbose )
 			// Store an address that message was failed to send to
 			i_msg->setAddress( *it);
 		}
-		it++;
 	}
 
 	return NULL;
 }
 
+/**
+ * @brief close socket
+ * If protocol was HTTP, flush remaining data and wait for the client to close
+ * the connection
+ * @param i_sd socket to close
+ * @param i_response_type type of message sent through it
+ */
 void af::socketDisconnect( int i_sd, uint32_t i_response_type)
 {
-//	if(0)
 	if( af::Environment::isServer() && 
 		( i_response_type != af::Msg::THTTP ) &&
 		( i_response_type != af::Msg::THTTPGET ))
@@ -521,7 +515,6 @@ void af::socketDisconnect( int i_sd, uint32_t i_response_type)
 		// Server waits client have closed socket first:
 		char buf[256];
 		int r = 1;
-		//printf("Server socket wait...\n");
 		while( r > 0 )
 		{
 			#ifdef WINNT
@@ -529,24 +522,9 @@ void af::socketDisconnect( int i_sd, uint32_t i_response_type)
 			#else
 			r = read( i_sd, buf, af::Msg::SizeHeader);
 			#endif
-		/*	if( r > 0 )
-			{
-				printf("Server socket wait: %d\n", r);
-				int n = write( 1, buf, r);
-				printf("\n\n");
-			}*/
 		}
-		//printf("Server socket closed.\n");
 	}
-	//else{ printf("closing socket w/0 waiting other side %s.\n", af::Msg::TNAMES[i_response_type]); }
 
 	closesocket( i_sd);
-}
-
-af::Msg * af::msgString( const std::string & i_str)
-{
-	af::Msg * o_msg = new af::Msg();
-	o_msg->setString( i_str);
-	return o_msg;
 }
 

@@ -474,6 +474,14 @@ void Msg::stdOutData( bool withHeader)
 	}
 }
 
+af::Msg * Msg::msgString( const std::string & i_str)
+{
+    af::Msg * o_msg = new af::Msg();
+    o_msg->setString( i_str);
+    return o_msg;
+}
+
+
 const char * Msg::TNAMES[]=
 {
 	/*------------ NONDATA MESSAGES ----------------------*/

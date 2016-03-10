@@ -355,6 +355,10 @@ And when Render can't connect to Afanasy. Afanasy register new Render and send b
 
 	inline int getHeaderOffset() const { return m_header_offset;}
 
+public:
+    /// Convenient utility to built string message
+    static Msg * msgString( const std::string & i_str);
+
 private:
 
 // header:
