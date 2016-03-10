@@ -26,6 +26,8 @@ const int Msg::SizeBuffer        = 1 << 14;                 ///< Message reading
 const int Msg::SizeBufferLimit   = Msg::SizeBuffer << 12;   ///< Message buffer maximum size = 67 Mega bytes.
 const int Msg::SizeDataMax       = Msg::SizeBufferLimit - Msg::SizeHeader;
 
+int32_t Msg::nextId = 0;
+
 //
 //########################## Message constructors: (and destructor) ###########################
 Msg::Msg( int msgType, int msgInt, bool i_receiving)
@@ -54,6 +56,8 @@ Msg::Msg( const char * rawData, int rawDataLen, bool i_receiving):
 	// We will only read node parameters to constuct af::Af based classes.
 	m_writing( false)
 {
+    m_id = Msg::nextId++;
+
 	if( rawDataLen < Msg::SizeHeader ) // Check minimum message size.
 	{
 		AFERRAR("Msg::Msg: rawDataLen < Msg::SizeHeader (%d<%d).", rawDataLen, Msg::SizeHeader)
@@ -83,6 +87,9 @@ void Msg::construct()
 	m_version = Msg::Version;
 	m_type = Msg::TNULL;
 	m_int32 = 0;
+
+    m_id = Msg::nextId++;
+    m_rid = -1;
 
 	m_header_offset = 0;
 

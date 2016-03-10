@@ -174,12 +174,10 @@ void msgCase( af::Msg * msg, RenderHost &render)
     if( NULL == msg)
 		return;
 
-    AF_DEBUG  << "msgCase: " << msg->v_generateInfoString();
-
     // Check not sended messages first, they were pushed back in accept queue:
 	if( msg->wasSendFailed())
 	{
-        AF_WARN << "Message sending failed: " << msg->v_generateInfoString();
+        AF_WARN << "Message sending failed: " << msg;
 		if( msg->getAddress().equal( af::Environment::getServerAddress()))
 		{
             AF_DEBUG << "Message was failed to send to server";
@@ -193,6 +191,8 @@ void msgCase( af::Msg * msg, RenderHost &render)
 		delete msg;
 		return;
 	}
+
+    AF_DEBUG  << "msgCase: " << msg;
 
 	switch( msg->type())
 	{
@@ -222,7 +222,7 @@ void msgCase( af::Msg * msg, RenderHost &render)
 		{
             AF_ERR << "IDs mistatch: this " << render.getId() << " != " << new_id << " new, re-connecting...";
             render.connectionLost();
-		}
+        }
 		break;
 	}
 	case af::Msg::TVersionMismatch:
@@ -284,7 +284,7 @@ void msgCase( af::Msg * msg, RenderHost &render)
 	}
 	default:
 	{
-        AF_ERR << "Unknown message recieved: " << msg->v_generateInfoString();
+        AF_ERR << "Unknown message recieved: " << msg;
 		break;
 	}
 	}

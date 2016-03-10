@@ -14,6 +14,7 @@
 #define close _close
 #endif
 
+#include "logger.h"
 #include "address.h"
 #include "environment.h"
 
@@ -66,14 +67,13 @@ void MsgQueue::processItem( AfQueueItem* item)
 
 	if( msg == NULL )
 	{
-		AFERRAR("MsgQueue::processItem: '%s': NULL Meassage.\n", name.c_str())
+        AF_WARN << "'" << name << "': NULL Message received.";
 		return;
 	}
 
 	if( msg->addressIsEmpty() && ( msg->addressesCount() == 0 ))
 	{
-		AFERRAR("MsgQueue::processItem: '%s':\n\tMessage has no addresses to send to.", name.c_str());
-		msg->v_stdOut();
+        AF_WARN << "'" << name << "': Message has no addresses to send to: " << msg;
 		delete msg;
 		return;
 	}
@@ -90,27 +90,23 @@ void MsgQueue::processItem( AfQueueItem* item)
 		}
 		else
 		{
-			AFERRAR("MsgQueue::processItem: '%s':\n\tGot an answer, but has no return queue set.", name.c_str())
-			printf("Reuest: ");
-			msg->v_stdOut();
-			printf("Answer: ");
-			answer->v_stdOut();
+            AF_WARN << "'" << name << "': Got an answer, but has no return queue set.";
+            AF_WARN << "  detail: Request: " << msg;
+            AF_WARN << "  detail: Answer: " << answer;
 			delete answer;
 		}
 	}
 
-	if(( false == ok) && m_returnNotSended )
+    if( false == ok && m_returnNotSended )
 	{
 		if( m_returnQueue != NULL )
 		{
 			msg->setSendFailed();
 			m_returnQueue->pushMsg( msg );
-			return;
 		}
 		else
 		{
-			AFERRAR("MsgQueue::processItem: '%s':\n\tCan't return message as no return queue set.", name.c_str())
-			msg->v_stdOut();
+            AF_WARN << "'" << name << "': Can't return message as no return queue is set: " << msg;
 		}
 	}
 

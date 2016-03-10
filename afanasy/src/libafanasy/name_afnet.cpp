@@ -282,29 +282,30 @@ const af::Address af::solveNetName( const std::string & i_name, int i_port, int 
 {
 	if( i_verbose == af::VerboseOn )
 	{
-		printf("Solving '%s'", i_name.c_str());
+        std::stringstream ss;
+        ss << "Solving '" << i_name << "' ";
 		switch( i_type)
 		{
 			case AF_UNSPEC: break;
-			case AF_INET:  printf(" and IPv4 forced"); break;
-			case AF_INET6: printf(" and IPv6 forced"); break;
-			default: printf(" (unknown protocol forced)");
+            case AF_INET:  ss << "and IPv4 forced"; break;
+            case AF_INET6: ss << "and IPv6 forced"; break;
+            default: ss << "(unknown protocol forced)";
 		}
-		printf("...\n");
+        AF_LOG << ss.str() << "...";
 	}
 
 	struct addrinfo *res;
 	struct addrinfo hints;
 	memset( &hints, 0, sizeof(hints));
 	hints.ai_flags = AI_ADDRCONFIG;
- //   hints.ai_family = AF_UNSPEC; // This is value is default
+    hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	char service_port[16];
 	sprintf( service_port, "%u", i_port);
 	int err = getaddrinfo( i_name.c_str(), service_port, &hints, &res);
 	if( err != 0 )
 	{
-		AFERRAR("af::solveNetName:\n%s", gai_strerror(err))
+        AF_ERR << "getaddrinfo: " << gai_strerror(err);
 		return af::Address();
 	}
 
@@ -320,7 +321,7 @@ const af::Address af::solveNetName( const std::string & i_name, int i_port, int 
 				case AF_INET:
 				{
 					struct sockaddr_in * sa = (struct sockaddr_in*)(r->ai_addr);
-					printf("IP = %s\n", inet_ntoa( sa->sin_addr));
+                    AF_LOG << "IP = " << inet_ntoa( sa->sin_addr);
 					break;
 				}
 				case AF_INET6:
@@ -329,11 +330,11 @@ const af::Address af::solveNetName( const std::string & i_name, int i_port, int 
 					char buffer[buffer_len];
 					struct sockaddr_in6 * sa = (struct sockaddr_in6*)(r->ai_addr);
 					const char * addr_str = inet_ntop( AF_INET6, &(sa->sin6_addr), buffer, buffer_len);
-					printf("IPv6 = %s\n", addr_str);
+                    AF_LOG << "IPv6 = " << addr_str;
 					break;
 				}
 				default:
-					printf("Unknown address family type = %d\n", r->ai_family);
+                    AF_LOG << "Unknown address family type = " << r->ai_family;
 					continue;
 			}
 		}
@@ -342,8 +343,7 @@ const af::Address af::solveNetName( const std::string & i_name, int i_port, int 
 
 		if( i_verbose == af::VerboseOn )
 		{
-			printf("Address = ");
-			addr.v_stdOut();
+            AF_LOG << "Address = " << addr;
 		}
 
 		// Free memory allocated for addresses:
@@ -476,7 +476,12 @@ af::Msg * af::msgsend( Msg * i_msg, bool & o_ok, VerboseMode i_verbose )
 	{
 		af::Msg * o_msg = ::msgsendtoaddress( i_msg, i_msg->getAddress(), o_ok, i_verbose);
 		if( o_msg != NULL )
+        {
+            // Force rid, in case remote host did not set it correctly
+            // This is mostly a backward compatibility feature
+            o_msg->setRid( i_msg->getId());
 			return o_msg;
+        }
 	}
 
 	if( i_msg->addressesCount() < 1)

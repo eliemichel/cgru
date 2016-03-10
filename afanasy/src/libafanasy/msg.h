@@ -279,6 +279,10 @@ And when Render can't connect to Afanasy. Afanasy register new Render and send b
 	inline int   dataLen() const { return m_int32; }///< Get data length.
 	inline int   int32()   const { return m_int32; }///< Get 32-bit integer, data lenght for data messages.
 
+    inline void setRid( int32_t rid) { m_rid = rid; }
+    inline int32_t getId()  { return m_id; }
+    inline int32_t getRid() { return m_rid; }
+
 	inline char* buffer() const { return m_buffer;}///< Get buffer pointer.
 
 	/// Get message full size (with data).
@@ -366,6 +370,10 @@ private:
 	int32_t m_type;      ///< Message type.
 	int32_t m_int32;     ///< Some 32-bit integer, data length for data messages.
 
+// id system
+    int32_t m_id;   ///< Message ID, sender side, that should be provided back in any answer as rid
+    int32_t m_rid;  ///< Response ID, destination, identifing the message to which this is an answer, or -1
+
 // data poiters:
 	char * m_buffer;     ///< Internal buffer pointer, for header and data
 	char * m_data;       ///< Message data pointer = buffer + header_size.
@@ -383,6 +391,9 @@ private:
 	std::list<Address> m_addresses;   ///< Addresses to dispatch message to.
 	bool m_receive;                   ///< Whether to recieve an answer on message request.
 	bool m_sendfailed;                ///< Message was failed to send.
+
+private:
+    static int32_t nextId;
 
 private:
 
