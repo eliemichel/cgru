@@ -31,16 +31,28 @@ public:
 
 private:
     /**
-     * Reduces /a/b/c/d/e/f.foo into e/f.foo
+     * @brief Reduces /a/b/c/d/e/f.foo into e/f.foo
+     * @param filename file name to reduce
      * TODO: handle filesystems where separator is not a slash (like, a backslash)
      */
     static const char * shorterFilename(const char *filename);
+
+    /**
+     * @brief Make stringstreams have the same width.
+     * The unique width is increased everytime the content of the stream is
+     * bigger than it.
+     * @param ss stringstream to pad with spaces up to the unique width.
+     */
+    static void align(std::stringstream &ss);
 
 public:
     static std::stringstream *log_batch;
 
 private:
     std::ostringstream m_ss;  ///< accumulation stream
+
+private:
+    static size_t align_width;
 };
 
 } // namespace af

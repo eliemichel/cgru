@@ -1,6 +1,9 @@
 #include "logger.h"
 #include "../libafanasy/af.h"
 
+#include <sstream>
+#include <iomanip>
+
 using namespace af;
 
 namespace Color
@@ -45,7 +48,11 @@ Logger::Logger(const char *func, const char *file, int line, Logger::Level level
     if (display_pid)
         m_ss << " [" << getpid() << "]";
 
-    m_ss << Color::grey << " (" << func << "():" << Logger::shorterFilename(file) << ":" << line << ") " << Color::nocolor << "\t";
+    std::stringstream pos;
+    pos << " (" << func << "():" << Logger::shorterFilename(file) << ":" << line << ") ";
+    Logger::align(pos);
+
+    m_ss << Color::grey << pos.str() << Color::nocolor;
 }
 
 Logger::~Logger()
@@ -75,4 +82,12 @@ const char * Logger::shorterFilename(const char *filename)
     return last_slash;
 }
 
+void Logger::align(std::stringstream &ss)
+{
+    size_t l = ss.str().length();
+    Logger::align_width = std::max(Logger::align_width, l);
+    ss << std::setw(Logger::align_width - l) << "";
+}
+
+size_t Logger::align_width = 0;
 std::stringstream *Logger::log_batch = NULL;
