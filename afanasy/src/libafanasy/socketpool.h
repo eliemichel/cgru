@@ -56,6 +56,15 @@ public:
      */
     bool get(const af::Address & i_address, int &socketfd, bool check=false);
     /**
+     * @brief add an already open socket to a given address.
+     * @param i_address address to which this socket is (supposed to be)
+     * connected
+     * @param socketfd socket file descriptor to save in the pool
+     * @return status. It especially returns false when there is already a
+     * socket registered at the address and the `force` mode is not enabled.
+     */
+    bool set(const af::Address & i_address, int socketfd, bool force=false);
+    /**
      * @brief release a socket previously retrieved using the get() method
      * @param i_address address indexing the socket to release
      */

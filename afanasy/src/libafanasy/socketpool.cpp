@@ -70,6 +70,33 @@ bool SocketPool::get(const af::Address & i_address, int &socketfd, bool check)
     return true;
 }
 
+bool SocketPool::set(const Address &i_address, int socketfd, bool force)
+{
+    m_global_mutex.Acquire();
+    if( m_table.count(i_address) > 0)
+    {
+        if (false == force)
+        {
+            m_global_mutex.Release();
+            return false;
+        }
+        else
+        {
+            std::pair<int, DlMutex> p = m_table[i_address];
+            p.second.Acquire();
+            ::close(p.first);
+            p.second.Release();
+        }
+    }
+
+    m_table[i_address] = std::make_pair<int, DlMutex>(socketfd, DlMutex());
+    for(std::vector<ReceivingMsgQueue*>::iterator it = m_subscribers.begin() ; it != m_subscribers.end() ; it++)
+        (*it)->addSocket(socketfd);
+
+    m_global_mutex.Release();
+    return true;
+}
+
 void SocketPool::release( const af::Address & i_address)
 {
     assert(m_table.count(i_address) != 0);  // do not release a socket that you did not get!
@@ -85,7 +112,9 @@ void SocketPool::close( const af::Address & i_address)
     std::pair<int, DlMutex> p = m_table[i_address];
     ::close(p.first);
 
+    m_global_mutex.Acquire();
     m_table.erase(i_address);
+    m_global_mutex.Release();
 
     p.second.Release();
     AF_DEBUG << "closed socket to " << i_address;

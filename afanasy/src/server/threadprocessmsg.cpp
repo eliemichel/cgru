@@ -69,6 +69,8 @@ uint32_t processMessage( ThreadArgs * i_args)
 	// if it is a new client registration request.
 	af::Msg * msg_request = new af::Msg( &(i_args->ss));
 	af::Msg * msg_response = NULL;
+    if( false == msg_request->addressIsEmpty())
+        af::Environment::getSocketPool().set(msg_request->getAddress(), i_args->sd);
 
 	// Read message data from socket
 	if( false == readMessage( i_args, msg_request))
