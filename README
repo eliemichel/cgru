@@ -1,3 +1,27 @@
+
+/!\ Disclaimer: This branch is highly unstable and not supposed to work as is.
+                Use it carefully, or switch back to master.
+
+Ongoing work
+------------
+
+Deliveryless system:
+	The server does not initiate connections towards renders and monitors any
+	more. It sends messages only as answers to clients heartbeat.
+
+SocketPool:
+	Server tries to keep connections alive as much as possible, managing them
+	in a so called SocketPool object.
+
+Logger:
+	Logging system is being cleaned up. A unified style is applied in order to
+	be easily read and/or parsed. Some potential features are on-the-fly
+	verbosity switch, hierarchical log (indentation to see nested calls).
+
+
+Original README:
+---
+
 Layout
 
 afanasy
