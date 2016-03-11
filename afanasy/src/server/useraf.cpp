@@ -2,6 +2,7 @@
 
 #include <math.h>
 
+#include "../libafanasy/logger.h"
 #include "../libafanasy/environment.h"
 
 #include "action.h"
@@ -221,7 +222,7 @@ af::Msg * UserAf::writeJobdsOrder() const
 
 void UserAf::v_refresh( time_t currentTime, AfContainer * pointer, MonitorContainer * monitoring)
 {
-	AFINFA("UserAf::refresh: \"%s\"", getName().c_str())
+    //AF_DEBUG << "UserAf::refresh: '" << getName() << "'";
 
 	int _numjobs = m_jobslist.getCount();
 	int _numrunningjobs = 0;
@@ -329,8 +330,6 @@ bool UserAf::v_solve( RenderAf * i_render, MonitorContainer * i_monitoring)
 int UserAf::v_calcWeight() const
 {
 	int weight = User::v_calcWeight();
-//printf("UserAf::calcWeight: User::calcWeight: %d bytes\n", weight);
 	weight += sizeof(UserAf) - sizeof( User);
-//printf("UserAf::calcWeight: %d bytes ( sizeof UserAf = %d)\n", weight, sizeof( UserAf));
 	return weight;
 }

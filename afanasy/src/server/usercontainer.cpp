@@ -4,6 +4,8 @@
 #include <string.h>
 
 #include "../include/afanasy.h"
+
+#include "../libafanasy/logger.h"
 #include "../libafanasy/msgqueue.h"
 
 #include "../libafsql/dbconnection.h"
@@ -27,7 +29,6 @@ UserContainer::UserContainer():
 
 UserContainer::~UserContainer()
 {
-AFINFO("UserContainer::~UserContainer:\n");
 }
 
 UserAf* UserContainer::addUser( const std::string & i_usernmae, const std::string & i_hostname, MonitorContainer * i_monitoring)
@@ -51,7 +52,7 @@ UserAf* UserContainer::addUser( const std::string & i_usernmae, const std::strin
 	UserAf *user = new UserAf( i_usernmae, i_hostname);
 	if( addUser(user) == 0)
 	{
-		AFERROR("UserContainer::addUser: Can't add user to container.\n");
+        AF_ERR << "Can't add user to container." << user;
 		delete user;
 		return NULL;
 	}
@@ -110,7 +111,7 @@ af::Msg * UserContainer::addUser( UserAf * i_user, MonitorContainer * i_monitori
 	{
 		if( user->getName() == i_user->getName())
 		{
-			AFERRAR("UserContainer::addUser: User \"%s\" already exists.", i_user->getName().c_str());
+            AF_ERR << "User '" << i_user->getName() << "' already exists.";
 			delete i_user;
 			std::ostringstream str;
 			str << "{\"error\":\"exists\"";
@@ -123,7 +124,7 @@ af::Msg * UserContainer::addUser( UserAf * i_user, MonitorContainer * i_monitori
 
 	if( addUser( i_user) == 0)
 	{
-		AFERRAR("UserContainer::addUser: Can't add user \"%s\" node to container.", i_user->getName().c_str());
+        AF_ERR << "Can't add user '" << i_user->getName() << "' node to container.";
 		delete i_user;
 		return af::jsonMsgError("Unable to add node to container.");
 	}
@@ -143,7 +144,6 @@ af::Msg * UserContainer::addUser( UserAf * i_user, MonitorContainer * i_monitori
 
 bool UserContainer::solve( RenderAf * i_render, MonitorContainer * i_monitoring)
 {
-//printf("\nUserContainer::genTask: render - %s\n", render->getName().c_str());
 	return m_userslist.solve( af::Node::SolveByPriority, i_render, i_monitoring);
 }
 

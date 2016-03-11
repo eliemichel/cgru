@@ -174,10 +174,17 @@ void msgCase( af::Msg * msg, RenderHost &render)
     if( NULL == msg)
 		return;
 
+    if( msg->getRid() < render.getFirstValidMsgId())
+    {
+        AF_WARN << "Ignoring obsolete message: " << *msg;
+        delete msg;
+        return;
+    }
+
     // Check not sended messages first, they were pushed back in accept queue:
 	if( msg->wasSendFailed())
 	{
-        AF_WARN << "Message sending failed: " << msg;
+        AF_WARN << "Message sending failed: " << *msg;
 		if( msg->getAddress().equal( af::Environment::getServerAddress()))
 		{
             AF_DEBUG << "Message was failed to send to server";
@@ -192,7 +199,7 @@ void msgCase( af::Msg * msg, RenderHost &render)
 		return;
 	}
 
-    AF_DEBUG  << "msgCase: " << msg;
+    AF_DEBUG  << "msgCase: " << *msg;
 
 	switch( msg->type())
 	{
@@ -284,7 +291,7 @@ void msgCase( af::Msg * msg, RenderHost &render)
 	}
 	default:
 	{
-        AF_ERR << "Unknown message recieved: " << msg;
+        AF_ERR << "Unknown message recieved: " << *msg;
 		break;
 	}
 	}

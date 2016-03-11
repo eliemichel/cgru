@@ -14,7 +14,17 @@ namespace af
 class Logger
 {
 public:
-    Logger(const char *func, const char *file, int line, const char *type = "INFO");
+    enum Level
+    {
+        DEBUG,
+        VERBOSE,
+        INFO,
+        WARNING,
+        ERROR
+    };
+
+public:
+    Logger(const char *func, const char *file, int line, enum Level level = INFO, bool display_pid=false);
     ~Logger();
 
     inline std::ostream &stream() { return m_ss; }
@@ -35,10 +45,12 @@ private:
 
 } // namespace af
 
-#define AF_DEBUG af::Logger(__func__, __FILE__, __LINE__, "DEBUG").stream()
-#define AF_LOG   af::Logger(__func__, __FILE__, __LINE__, "INFO").stream()
-#define AF_WARN  af::Logger(__func__, __FILE__, __LINE__, "WARNING").stream()
-#define AF_ERR   af::Logger(__func__, __FILE__, __LINE__, "ERROR").stream()
+#define DISPLAY_PID false
+#define AF_DEBUG   af::Logger(__func__, __FILE__, __LINE__, af::Logger::DEBUG,   DISPLAY_PID).stream()
+#define AF_VERBOSE af::Logger(__func__, __FILE__, __LINE__, af::Logger::VERBOSE, DISPLAY_PID).stream()
+#define AF_LOG     af::Logger(__func__, __FILE__, __LINE__, af::Logger::INFO,    DISPLAY_PID).stream()
+#define AF_WARN    af::Logger(__func__, __FILE__, __LINE__, af::Logger::WARNING, DISPLAY_PID).stream()
+#define AF_ERR     af::Logger(__func__, __FILE__, __LINE__, af::Logger::ERROR,   DISPLAY_PID).stream()
 
 #define AF_LOGBATCH_BEGIN() { if (NULL != af::Logger::log_batch) delete af::Logger::log_batch; af::Logger::log_batch = new std::stringstream(); }
 #define AF_LOGBATCH_PRINT() std::cerr << af::Logger::log_batch->str() << std::flush

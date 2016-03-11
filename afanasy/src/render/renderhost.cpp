@@ -26,7 +26,8 @@ RenderHost::RenderHost():
     m_updateMsgType(af::Msg::TRenderRegister),
     m_connected(false),
     m_no_output_redirection(false),
-    m_first_time(true)
+    m_first_time(true),
+    m_first_valid_msg_id(0)
 {
     if( af::Environment::hasArgument("-nor")) m_no_output_redirection = true;
 
@@ -123,10 +124,12 @@ void RenderHost::setRegistered( int i_id)
 {
     m_connected = true;
     m_id = i_id;
+    m_first_valid_msg_id = af::Msg::getNextId(); // obsolete previously sent messages;
     m_msgDispatchQueue->setVerboseMode( af::VerboseOn);
     setUpdateMsgType( af::Msg::TRenderUpdate);
     AF_LOG << "Render registered.";
 }
+
 
 void RenderHost::connectionLost()
 {

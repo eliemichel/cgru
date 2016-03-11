@@ -2,6 +2,7 @@
 
 #include "../include/afanasy.h"
 
+#include "../libafanasy/logger.h"
 #include "../libafanasy/msg.h"
 
 #include "afcommon.h"
@@ -67,7 +68,6 @@ af::Msg * RenderContainer::addRender( RenderAf *newRender, MonitorContainer * mo
 			newRender->initialize();
          if( monitoring ) monitoring->addEvent( af::Msg::TMonitorRendersAdd, id);
          AFCommon::QueueLog("New Render registered: " + newRender->v_generateInfoString());
-//if( newRender->isOnline()) AFCommon::QueueDBAddItem( newRender);
       }
       // Return new render ID to render to tell that it was successfully registered:
       return new af::Msg( af::Msg::TRenderId, id);
@@ -76,7 +76,7 @@ af::Msg * RenderContainer::addRender( RenderAf *newRender, MonitorContainer * mo
    // Adding offline render from database:
    if( addClient( newRender))
    {
-      std::cout << "Render offline registered - \"" << newRender->getName() << "\"." << std::endl;
+        AF_LOG << "Render offline registered - \"" << newRender->getName() << "\".";
 		newRender->initialize();
    }
 

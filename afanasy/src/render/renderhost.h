@@ -97,6 +97,8 @@ public:
      */
     void listenFailed( const af::Address & i_addr);
 
+    inline int32_t getFirstValidMsgId() { return m_first_valid_msg_id; }
+
 #ifdef WINNT
     void windowsMustDie();
 #endif
@@ -127,4 +129,10 @@ private:
 
     /// Bool used to avoid measuring ressources at the first update (dirty hack, should be avoided)
     bool m_first_time;
+
+    /// When the render host switch state, it can obsolete all the previously
+    /// sent messages. This is a way to avoid inconsistent states where the
+    /// render would get an answer for e.g. a second TRenderRegister message
+    /// while it correctly processed the first one.
+    int32_t m_first_valid_msg_id;
 };

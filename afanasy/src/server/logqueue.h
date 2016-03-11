@@ -17,6 +17,7 @@ public:
 
 private:
    std::string text;
+   Flags m_flags;
 };
 
 class LogQueue : public af::AfQueue

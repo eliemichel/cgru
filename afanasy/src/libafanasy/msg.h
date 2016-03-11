@@ -363,6 +363,8 @@ public:
     /// Convenient utility to built string message
     static Msg * msgString( const std::string & i_str);
 
+    static inline int32_t getNextId() { return ms_nextId; }
+
 private:
 
 // header:
@@ -393,7 +395,7 @@ private:
 	bool m_sendfailed;                ///< Message was failed to send.
 
 private:
-    static int32_t nextId;
+    static int32_t ms_nextId;
 
 private:
 

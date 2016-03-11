@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <iostream>
 
+#include "../libafanasy/logger.h"
 #include "../libafanasy/name_af.h"
 
 #define AFOUTPUT
@@ -10,30 +11,24 @@
 #include "../include/macrooutput.h"
 
 LogData::LogData( const std::string & str, int flags)
-{
-   switch(flags)
-   {
-   case Error:
-   case Errno:
-      text += "ERROR ";
-   }
-
-   text += af::time2str();
-   text += ": ";
-   text += str;
-
-   switch(flags)
-   {
-   case Errno:
-      text += "\n";
-      text += strerror( errno);
-   }
-}
+    : text(str)
+    , m_flags((Flags)flags)
+{}
 
 void LogData::output()
 {
-   std::cout << text << std::endl;
-   std::cout.flush();
+    switch(m_flags)
+    {
+    case Info:
+        AF_LOG << text;
+        break;
+    case Error:
+        AF_ERR << text;
+        break;
+    case Errno:
+        AF_ERR << text << " (system returned: " << strerror(errno) << ")";
+        break;
+    }
 }
 
 LogQueue::LogQueue( const std::string & QueueName):

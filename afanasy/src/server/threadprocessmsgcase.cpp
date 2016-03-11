@@ -5,6 +5,7 @@
 #include "../include/afanasy.h"
 #include "../libafanasy/logger.h"
 
+#include "../libafanasy/logger.h"
 #include "../libafanasy/environment.h"
 #include "../libafanasy/farm.h"
 #include "../libafanasy/msg.h"
@@ -30,7 +31,7 @@ af::Msg * threadProcessJSON( ThreadArgs * i_args, af::Msg * i_msg);
 
 af::Msg* threadProcessMsgCase( ThreadArgs * i_args, af::Msg * i_msg)
 {
-	//i_msg->stdOut();
+    AF_DEBUG  << "new message: " << *i_msg;
 	af::Msg * o_msg_response = NULL;
 
 	switch( i_msg->type())

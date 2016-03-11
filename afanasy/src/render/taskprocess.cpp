@@ -17,6 +17,7 @@ extern void (*fp_setupChildProcess)( void);
 
 #include "../include/afanasy.h"
 
+#include "../libafanasy/logger.h"
 #include "../libafanasy/environment.h"
 #include "../libafanasy/msgclasses/mclistenaddress.h"
 #include "../libafanasy/msgclasses/mctaskoutput.h"
@@ -97,13 +98,13 @@ TaskProcess::TaskProcess( af::TaskExec * i_taskExec, RenderHost * i_render):
 #ifdef WINNT
 		if( m_wdir.find("\\\\") == 0)
 		{
-			AFERRAR("Working directory starts with '\\':\n%s\nUNC path can't be current.", m_wdir.c_str())
+            AF_ERR << "Working directory starts with '\\', but UNC path can't be current: " << m_wdir;
 			m_wdir.clear();
 		}
 #endif
 		if( false == af::pathIsFolder( m_wdir))
 		{
-			printf("WARNING: Working directory does not exist:\n%s\n", m_wdir.c_str());
+            AF_WARN << "Working directory does not exist: " << m_wdir;
 			m_wdir.clear();
 		}
 	}
@@ -164,7 +165,7 @@ void TaskProcess::launchCommand()
 
 	if( m_pid <= 0 )
 	{
-		AFERROR("Failed to start a process")
+        AF_ERR << "Failed to start a process";
 		m_pid = 0;
 		return;
 	}
@@ -175,14 +176,14 @@ void TaskProcess::launchCommand()
 	JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli = { 0 };
 	jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
 	if( SetInformationJobObject( m_hjob, JobObjectExtendedLimitInformation, &jeli, sizeof( jeli ) ) == 0)
-		AFERROR("SetInformationJobObject failed.\n");
+        AF_ERR << "SetInformationJobObject failed.";
 	if( AssignProcessToJobObject( m_hjob, m_pinfo.hProcess) == false)
-		AFERRAR("TaskProcess: AssignProcessToJobObject failed with code = %d.", GetLastError())
+        AF_ERR << "AssignProcessToJobObject failed with code = " << GetLastError();
 	// Ppecess is CREATE_SUSPENDED so we need to resume it:
 	if( ResumeThread( m_pinfo.hThread) == -1)
-		AFERRAR("TaskProcess: ResumeThread failed with code = %d.", GetLastError())
+        AF_ERR << "ResumeThread failed with code = " << GetLastError();
 
-    std::cout << "\n" << af::time2str() << ": Started PID=" << m_pid << ": ";
+    AF_LOG << "Started PID=" << m_pid << ": ";
 
 	#else
 	// On UNIX we set buffers and non-blocking:
@@ -195,27 +196,25 @@ void TaskProcess::launchCommand()
 		setNonblocking( fileno( m_io_outerr));
 	}
 
-    std::cout << "\n" << af::time2str() << ": Started PID=" << m_pid << " SID=" << getsid(m_pid) << "(" << setsid() << ") GID=" << getpgid(m_pid) << "(" << getpgrp() << "): ";
+    AF_LOG << "Started PID=" << m_pid << " SID=" << getsid(m_pid) << "(" << setsid() << ") GID=" << getpgid(m_pid) << "(" << getpgrp() << "): ";
 
 	#endif
 
 	if( false == m_doing_post )
 		m_taskexec->v_stdOut( af::Environment::isVerboseMode());
 	else
-		printf("POST:\n%s\n", m_cmd.c_str());
+        AF_LOG << "POST: " << m_cmd;
 }
 
 TaskProcess::~TaskProcess()
 {
-//printf(" ~ TaskProcess(): m_pid = %d, Z = %s, m_stop_time = %llu\n", m_pid, m_zombie ? "TRUE":"FALSE", m_stop_time);
 	m_update_status = 0;
 
 	killProcess();
 	closeHandles();
 
 #ifdef AFOUTPUT
-	printf(" ~ TaskProcess(): ");
-	m_taskexec->stdOut();
+    AF_LOG << " ~ TaskProcess(): " << m_taskexec;
 #endif
 
 	delete m_taskexec;
@@ -249,7 +248,7 @@ void TaskProcess::refresh()
 		else if( time( NULL) - m_stop_time > AFRENDER::TERMINATEWAITKILL )
 		{
 			// Task was asket to stop but did not stopped for more than AFRENDER::TERMINATEWAITKILL seconds
-			printf("Warining: Task stopping time > %d seconds.\n", AFRENDER::TERMINATEWAITKILL);
+            AF_WARN << "Task stopping time > " << AFRENDER::TERMINATEWAITKILL << " seconds.";
 			// Kill process in this case
 			killProcess();
 		}
@@ -261,7 +260,7 @@ void TaskProcess::refresh()
 		if( m_dead_cycle > 0 )
 		{
 	        // This class instance is not needed any more, but still exists due some error
-		    printf("Dead Cycle #%d: ", m_dead_cycle); m_taskexec->v_stdOut();
+            AF_LOG << "Dead Cycle #" << m_dead_cycle << ": " << m_taskexec;
 		}
 
 		// This is a first dead cycle.
@@ -294,43 +293,30 @@ void TaskProcess::refresh()
 #else
 	pid = waitpid( m_pid, &status, WNOHANG);
 #endif
-//printf("TaskProcess::refresh(): pid=%d, m_pid=%d\n", pid, m_pid);
 
-	if( pid == 0 )
-	{
-		// Task is not finished
-		readProcess("RUN",/* i_read_empty = */ false);
-	}
-	else if( pid == m_pid )
-	{
-		// Task is finished
-		processFinished( status);
-	}
+    if( pid == 0 )  // Task is not finished
+        readProcess("RUN",/* i_read_empty = */ false);
+    else if( pid == m_pid )  // Task is finished
+        processFinished( status);
 	else if( pid == -1 )
-	{
-		AFERRPE("TaskProcess::refresh(): waitpid: ")
-	}
+        AF_ERR << "waitpid: " << strerror(errno);
 
 	sendTaskSate();
 }
 
 void TaskProcess::close()
 {
-// Server asked render to close a task
-// So it is not needed for server any more
-//printf("TaskProcess::close(): m_pid = %d, Z = %s, m_stop_time = %llu\n", m_pid, m_zombie ? "TRUE":"FALSE", m_stop_time);
+    // Server asked render to close a task
+    // So it is not needed for server any more
 
 	// Zero value means that message for server is not needed
    	m_update_status = 0;
 
 	// If task was asked to stop
+    // It can be parser case, error or success, no matter here
+    // Task should be set to zombie only after its process finish
 	if( m_stop_time )
-	{
-		// It can be parser case, error or success, no matter here
-		// Task should be set to zombie only after its process finish
-
-		return;
-	}
+        return;
 
 	// Set zombie to let render to delete this class instance
 	m_zombie = true;
@@ -369,7 +355,7 @@ void TaskProcess::readProcess( const std::string & i_mode, bool i_read_empty)
 	                              ( m_update_status != af::TaskExec::UPFinishedParserError   ) &&
 	                              ( m_update_status != af::TaskExec::UPFinishedParserSuccess ))
 	{
-		printf("WARNING: Parser notification.\n");
+        AF_WARN << "Parser notification.";
 		m_update_status = af::TaskExec::UPWarning;
 	}
 
@@ -379,13 +365,13 @@ void TaskProcess::readProcess( const std::string & i_mode, bool i_read_empty)
 		// ckeck parser reasons to force to stop a task
 	    if( m_parser->hasError())
 	    {
-	        printf("Error: Parser bad result. Stopping task.\n");
+            AF_ERR << "Parser bad result. Stopping task.";
 	        m_update_status = af::TaskExec::UPFinishedParserError;
 	        stop();
 	    }
 	    if( m_parser->isFinishedSuccess())
 	    {
-	        printf("Warning: Parser finished success. Stopping task.\n");
+            AF_WARN << "Parser finished success. Stopping task.";
 	        m_update_status = af::TaskExec::UPFinishedParserSuccess;
 	        stop();
 	    }
@@ -446,24 +432,22 @@ void TaskProcess::sendTaskSate()
 	af::Msg * msg = new af::Msg( type, &taskup);
 	if( toRecieve) msg->setReceiving();
 
-//    printf("TaskProcess::sendTaskSate:\n");msg->stdOut();printf("\n");
-
     m_render->dispatchMessage( msg);
 }
 
 void TaskProcess::processFinished( int i_exitCode)
 {
-    std::cout << af::time2str() << ": Finished PID=" << m_pid << ": Exit Code=" << i_exitCode << " Status=" << WEXITSTATUS( i_exitCode) << " " << (m_stop_time ? "(stopped)":"") << std::endl;
+    AF_LOG << "Finished PID=" << m_pid << ": Exit Code=" << i_exitCode << " Status=" << WEXITSTATUS( i_exitCode) << " " << (m_stop_time ? "(stopped)":"");
 
 	// Zero m_pid means that task is not running any more
 	m_pid = 0;
 
 #ifdef WINNT
 	if( m_stop_time != 0 )
-		printf("Task terminated/killed\n");
+        AF_LOG << "Task terminated/killed";
 #else
 	if(( m_stop_time != 0 ) || WIFSIGNALED( i_exitCode))
-		printf("Task terminated/killed by signal: '%s'.\n", strsignal( WTERMSIG( i_exitCode)));
+        AF_LOG << "Task terminated/killed by signal: '" << strsignal( WTERMSIG( i_exitCode)) << "'.";
 #endif
 
 	// If server update not needed
@@ -501,7 +485,7 @@ void TaskProcess::processFinished( int i_exitCode)
 	else if( m_parser->isBadResult())
 	{
 		m_update_status = af::TaskExec::UPFinishedParserBadResult;
-		AFINFO("Bad result from parser.")
+        AF_LOG << "Bad result from parser.";
 	}
 	else
 	{
@@ -514,7 +498,6 @@ void TaskProcess::processFinished( int i_exitCode)
 		if( m_doing_post && m_post_cmds.size())
 		{
 			m_cmd = m_post_cmds.front();
-//printf("POST:\n%s\n", af::strJoin( m_post_cmds, "\n").c_str());
 			m_post_cmds.erase( m_post_cmds.begin());
 			launchCommand();
 		}
@@ -549,7 +532,7 @@ void TaskProcess::stop()
 void TaskProcess::killProcess()
 {
 	if( m_pid == 0 ) return;
-	printf("KILLING NOT TERMINATED TASK.\n");
+    AF_WARN << "KILLING NOT TERMINATED TASK.";
 #ifdef UNIX
 	killpg( getpgid( m_pid), SIGKILL);
 #else
@@ -580,7 +563,7 @@ int TaskProcess::readPipe( HANDLE i_handle )
 	{
 		DWORD lastError = GetLastError();
 		if( lastError != ERROR_BROKEN_PIPE )
-			AFERRAR("TaskProcess::readPipe: PeekNamedPipe() failure with code = %d.", GetLastError())
+            AF_ERR << "PeekNamedPipe() failure with code = " << GetLastError();
 		return 0;
 	}
 
@@ -591,7 +574,7 @@ int TaskProcess::readPipe( HANDLE i_handle )
 	DWORD readsize = 0;
 	if( false == ReadFile( i_handle, m_readbuffer, bytesAvail, &readsize, NULL))
 	{
-		AFERRAR("TaskProcess::readPipe: ReadFile() failure with code = %d.", GetLastError())
+        AF_ERR << "ReadFile() failure with code = " << GetLastError();
 		return 0;
 	}
 
@@ -626,8 +609,7 @@ void TaskProcess::collectFiles( af::MCTaskUp & i_task_up)
 		{
 			if( m_collected_files[j] == list[i] )
 			{
-				//printf("File '%s' already collected\n", list[i].c_str());
-				already_collected = true;
+                already_collected = true;
 				break;
 			}
 		}

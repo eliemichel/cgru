@@ -31,10 +31,6 @@ RenderAf::RenderAf( const std::string & i_store_dir):
 	af::Render(),
 	AfNodeSrv( this, i_store_dir)
 {
-//printf("RenderAf::RenderAf:\n");
-//printf("this = %p\n", this);
-//	setNode( this);
-	AFINFA("RenderAf::RenderAf(%d)", m_id);
 	initDefaultValues();
 
 	int size;
@@ -128,7 +124,6 @@ void RenderAf::offline( JobContainer * jobs, uint32_t updateTaskState, MonitorCo
 		AFCommon::QueueLog("Render Deleting: " + v_generateInfoString( false));
 		appendLog("Waiting for deletion.");
 		setZombie();
-//		AFCommon::saveLog( getLog(), af::Environment::getRendersDir(), m_name);
 		if( monitoring ) monitoring->addEvent( af::Msg::TMonitorRendersDel, m_id);
 	}
 	else
@@ -146,7 +141,7 @@ bool RenderAf::update( const af::Render * render)
 	if( isOffline()) return false;
 	if( render == NULL )
 	{
-		AFERROR("Render::update( Render * render): render == NULL")
+        AF_ERR << "render == NULL";
 		return false;
 	}
 
@@ -160,7 +155,7 @@ bool RenderAf::online( RenderAf * render, MonitorContainer * monitoring)
 {
 	if( isOnline())
 	{
-		AFERROR("RenderAf::online: Render is already online.")
+        AF_ERR << "Render is already online: " << render;
 		return false;
 	}
 	m_idle_time = time( NULL);
@@ -186,6 +181,7 @@ bool RenderAf::online( RenderAf * render, MonitorContainer * monitoring)
 
 void RenderAf::deregister( JobContainer * jobs, MonitorContainer * monitoring )
 {
+    AF_DEBUG << "Deregistering render: " << this;
 	if( isOffline())
 	{
 		appendLog("Render deregister request - offline already.");
@@ -209,12 +205,12 @@ void RenderAf::setTask( af::TaskExec *taskexec, MonitorContainer * monitoring, b
 {
   if( isOffline())
 	{
-		AFERROR("RenderAf::setTask: Render is offline.")
+        AF_ERR << "Render is offline: " << this;
 		return;
 	}
 	if( taskexec == NULL)
 	{
-		AFERROR("RenderAf::setTask: taskexec == NULL.")
+        AF_ERR << "taskexec == NULL";
 		return;
 	}
 
@@ -229,14 +225,14 @@ void RenderAf::setTask( af::TaskExec *taskexec, MonitorContainer * monitoring, b
         m_msg_queue.push( msg);
 		std::string str = "Starting task: ";
 		str += taskexec->v_generateInfoString( false);
-        std::cout << af::time2str() << ": Adding task [job=" << taskexec->getJobId() << ", block=" << taskexec->getBlockNum() << ", task=" << taskexec->getTaskNum() << "] to render [" << v_generateInfoString() << "]" << std::endl;
+        AF_LOG << ": Adding task [job=" << taskexec->getJobId() << ", block=" << taskexec->getBlockNum() << ", task=" << taskexec->getTaskNum() << "] to render [" << this << "]";
 		appendTasksLog( str);
 	}
 	else
 	{
 		std::string str = "Captured by task: ";
 		str += taskexec->v_generateInfoString( false);
-        std::cout << af::time2str() << ": Captured task [job=" << taskexec->getJobId() << ", block=" << taskexec->getBlockNum() << ", task=" << taskexec->getTaskNum() << "] to render [" << v_generateInfoString() << "]" << std::endl;
+        AF_LOG << ": Captured task [job=" << taskexec->getJobId() << ", block=" << taskexec->getBlockNum() << ", task=" << taskexec->getTaskNum() << "] to render [" << this << "]";
 		appendTasksLog( str);
 	}
 }
@@ -245,7 +241,7 @@ void RenderAf::startTask( af::TaskExec *taskexec)
 {
 	if( isOffline())
 	{
-		AFERROR("RenderAf::startTask: Render is offline.")
+        AF_ERR << "Render is offline";
 		return;
 	}
 	for( std::list<af::TaskExec*>::const_iterator it = m_tasks.begin(); it != m_tasks.end(); it++)
@@ -259,13 +255,12 @@ void RenderAf::startTask( af::TaskExec *taskexec)
 		std::string str = "Starting service: ";
 		str += taskexec->v_generateInfoString( false);
 		appendLog( str);
-        std::cout << af::time2str() << ": Starting task [job=" << taskexec->getJobId() << ", block=" << taskexec->getBlockNum() << ", task=" << taskexec->getTaskNum() << "] to render [" << v_generateInfoString() << "]" << std::endl;
+        AF_LOG << ": Starting task [job=" << taskexec->getJobId() << ", block=" << taskexec->getBlockNum() << ", task=" << taskexec->getTaskNum() << "] to render [" << this << "]";
 
 		return;
 	}
 
-	AFERROR("RenderAf::startTask: No such task.")
-	taskexec->v_stdOut( false);
+    AF_ERR << "No such task: " << taskexec;
 }
 
 void RenderAf::v_priorityChanged( MonitorContainer * i_monitoring) { ms_renders->sortPriority( this);}
@@ -303,7 +298,6 @@ void RenderAf::v_action( Action & i_action)
 			if( isOnline() ) return;
 			appendLog( std::string("Deleted by ") + i_action.author);
 			offline( NULL, 0, i_action.monitors, true);
-//AFCommon::QueueDBDelItem( this);
 			return;
 		}
 		else if( type == "reboot")
@@ -555,12 +549,7 @@ void RenderAf::v_refresh( time_t currentTime,  AfContainer * pointer, MonitorCon
 	{
 		appendLog( std::string("ZOMBIETIME: ") + af::itos(af::Environment::getRenderZombieTime()) + " seconds.");
 		AFCommon::QueueLog( std::string("Render: \"") + getName() + "\" - ZOMBIETIME");
-/*		if( isBusy())
-		{
-			printf("Was busy:\n");
-			for( std::list<af::TaskExec*>::iterator it = tasks.begin(); it != tasks.end(); it++) (*it)->stdOut();
-		}*/
-		offline( jobs, af::TaskExec::UPRenderZombie, monitoring);
+        offline( jobs, af::TaskExec::UPRenderZombie, monitoring);
 		return;
 	}
 
@@ -627,7 +616,6 @@ void RenderAf::v_refresh( time_t currentTime,  AfContainer * pointer, MonitorCon
 			monitoring->addEvent( af::Msg::TMonitorRendersChanged, m_id);
 			store();
 		}
-		//printf("BUSY: %li-%li=%li\n", currentTime, m_busy_time, currentTime-m_busy_time);
 	}
 
 	// Update idle time:
@@ -710,7 +698,6 @@ void RenderAf::v_refresh( time_t currentTime,  AfContainer * pointer, MonitorCon
 				store();
 			}
 		}
-		//printf("IDLE: %li-%li=%li\n", currentTime, m_idle_time, currentTime-m_idle_time);
 	}
 }
 
@@ -892,8 +879,8 @@ void RenderAf::addService( const std::string & type)
 		{
 			m_services_counts[i]++;
 			if((m_host.getServiceCount(i) > 0 ) && (m_services_counts[i] > m_host.getServiceCount(i)))
-				AFERRAR("RenderAf::addService: m_services_counts > host.getServiceCount for '%s' (%d>=%d)",
-						  type.c_str(), m_services_counts[i], m_host.getServiceCount(i))
+                AF_ERR << "m_services_counts > host.getServiceCount for '" << type
+                       << "' (" << m_services_counts[i] << " >= " << m_host.getServiceCount(i) << ")";
 			return;
 		}
 	}
@@ -909,7 +896,8 @@ void RenderAf::remService( const std::string & type)
 		{
 			if( m_services_counts[i] < 1)
 			{
-				AFERRAR("RenderAf::remService: m_services_counts < 1 for '%s' (=%d)", type.c_str(), m_services_counts[i])
+                AF_ERR << "m_services_counts < 1 for '" << type
+                       << "' (= " << m_services_counts[i] << ")";
 			}
 			else
 				m_services_counts[i]--;
@@ -995,8 +983,6 @@ af::Msg * RenderAf::writeFullInfo() const
 int RenderAf::v_calcWeight() const
 {
 	int weight = Render::v_calcWeight();
-//printf("RenderAf::calcWeight: Render::calcWeight: %d bytes\n", weight);
 	weight += sizeof(RenderAf) - sizeof( Render);
-//printf("RenderAf::calcWeight: %d bytes ( sizeof RenderAf = %d)\n", weight, sizeof( Render));
 	return weight;
 }

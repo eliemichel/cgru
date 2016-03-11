@@ -104,6 +104,8 @@ printf("Request:  %s: %s\n", msg_request->v_generateInfoString().c_str(), msg_re
 	// If request not needed any more it will be deleted there.
 
 	response_type = 0; // No response
+    if( request_type == af::Msg::TRenderDeregister)
+        response_type = -1;  // no error, but can close connection
 
 	if( msg_response == NULL)
 	{

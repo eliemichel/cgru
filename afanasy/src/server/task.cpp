@@ -2,6 +2,7 @@
 
 #include "../include/afanasy.h"
 
+#include "../libafanasy/logger.h"
 #include "../libafanasy/environment.h"
 #include "../libafanasy/job.h"
 #include "../libafanasy/blockdata.h"
@@ -106,7 +107,7 @@ void Task::v_start( af::TaskExec * taskexec, int * runningtaskscounter, RenderAf
    }
    if( m_run)
    {
-      AFERROR("Task is already running.")
+      AF_ERR << "Task is already running.";
       delete taskexec;
       return;
    }
@@ -128,8 +129,7 @@ void Task::v_updateState( const af::MCTaskUp & taskup, RenderContainer * renders
       return;
    }
 
-	//printf("Task::updateState:\n");
-	m_run->update( taskup, renders, monitoring, errorHost);
+    m_run->update( taskup, renders, monitoring, errorHost);
 
 	if( taskup.getDataLen() != 0 )
 		v_writeTaskOutput( taskup);
@@ -144,7 +144,6 @@ void Task::v_updateState( const af::MCTaskUp & taskup, RenderContainer * renders
 
 void Task::deleteRunningZombie()
 {
-//printf("Task::deleteRunningZombie:\n");
    if( m_run == NULL ) return;
    if( false == m_run->isZombie()) return;
    delete m_run;
@@ -153,7 +152,6 @@ void Task::deleteRunningZombie()
 
 void Task::v_refresh( time_t currentTime, RenderContainer * renders, MonitorContainer * monitoring, int & errorHostId)
 {
-//printf("Task::refresh:\n");
    bool changed = false;
 
    // forgive error hosts
@@ -406,23 +404,6 @@ void Task::getStoredFiles( std::ostringstream & i_str) const
 		std::string filename = m_store_dir_files + AFGENERAL::PATH_SEPARATOR + m_stored_files[i];
 
 		i_str << "\n{\"name\":\"" << filename << "\"";
-/*
-		int readsize = -1;
-		char * data = af::fileRead( filename, &readsize, af::Msg::SizeDataMax, &error);
-		if( data )
-		{
-			i_str << ",\n\"data\":\"";
-			i_str << af::base64encode( data, readsize);
-			i_str << "\"";
-			delete [] data;
-		}
-		else
-		{
-			i_str << "\n,\"error\":\"" << af::strEscape( error) << "\"";
-		}
-
-		i_str << ",\n\"size\":" << readsize;
-*/
 		i_str << "}";
 	}
 
@@ -441,7 +422,6 @@ const std::string Task::getOutputFileName( int i_starts_count) const
 
 af::Msg * Task::getOutput( int i_startcount, RenderContainer * i_renders, std::string & o_filename, std::string & o_error) const
 {
-//printf("Task::getOutput:\n");
 	if( m_progress->starts_count < 1 )
 	{
 		o_error = "Task is not started.";

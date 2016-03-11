@@ -1,5 +1,6 @@
 #include "taskrun.h"
 
+#include "../libafanasy/logger.h"
 #include "../libafanasy/blockdata.h"
 #include "../libafanasy/environment.h"
 #include "../libafanasy/job.h"
@@ -86,20 +87,19 @@ void TaskRun::update( const af::MCTaskUp& taskup, RenderContainer * renders, Mon
    }
    if( taskup.getClientId() != m_hostId)
    {
-      AFERRAR("TaskRun::update: taskup.getClientId() != hostId (%d != %d)", taskup.getClientId(), m_hostId)
-      //AFERRAR("Detail: TaskUpdate: %s", taskup.v_generateInfoString(true /* full */).c_str());
-      AFERRAR("Detail: TaskUpdate: job=%d, block=%d, task=%d", taskup.getNumJob(), taskup.getNumBlock(), taskup.getNumTask());
+      AF_ERR << "taskup.getClientId() != hostId (" << taskup.getClientId() << " != " << m_hostId << ")";
+      AF_ERR << "  detail: TaskUpdate: job=" << taskup.getNumJob() << ", block=" << taskup.getNumBlock() << ", task=" << taskup.getNumTask();
       // Tells the wrong client to stop doing this task
       return;
    }
    if((m_progress->state & AFJOB::STATE_RUNNING_MASK) == false)
    {
-      AFERRAR("TaskRun::update: %s[%d][%d] task is not running.", m_block->m_job->getName().c_str(), m_block->m_data->getBlockNum(), m_tasknum)
+      AF_ERR << m_block->m_job->getName() << "[" << m_block->m_data->getBlockNum() << "][" << m_tasknum << "] task is not running.";
       return;
    }
    if( m_exec == NULL)
    {
-      AFERRAR("TaskRun::update: %s[%d][%d] Task executable is NULL.", m_block->m_job->getName().c_str(), m_block->m_data->getBlockNum(), m_tasknum)
+      AF_ERR << m_block->m_job->getName() << "[" << m_block->m_data->getBlockNum() << "][" << m_tasknum << "] Task executable is NULL.";
       return;
    }
 
@@ -116,7 +116,6 @@ void TaskRun::update( const af::MCTaskUp& taskup, RenderContainer * renders, Mon
          m_task->v_store();
       }
    case af::TaskExec::UPPercent:
-//printf("TaskRun::update: case af::TaskExec::UPPercent:\n");
       m_progress->percent      = taskup.getPercent();
       m_progress->frame        = taskup.getFrame();
       m_progress->percentframe = taskup.getPercentFrame();
@@ -208,7 +207,7 @@ void TaskRun::update( const af::MCTaskUp& taskup, RenderContainer * renders, Mon
    }
    default:
    {
-      AFERRAR("TaskRun::update: Unknown task update status = %d", taskup.getStatus())
+      AF_ERR << "Unknown task update status = " << taskup.getStatus();
       return;
    }
    }
@@ -218,10 +217,9 @@ bool TaskRun::refresh( time_t currentTime, RenderContainer * renders, MonitorCon
 {
    if( m_exec == NULL)
    {
-      AFERRAR("TaskRun::refresh: %s[%d][%d] Task executable is NULL.", m_block->m_job->getName().c_str(), m_block->m_data->getBlockNum(), m_tasknum)
+      AF_ERR << m_block->m_job->getName() << "[" << m_block->m_data->getBlockNum() << "][" << m_tasknum << "] Task executable is NULL.";
       return false;
    }
-//printf("TaskRun::refresh: %s[%d][%d]\n", block->job->getName().toUtf8().data(), block->data->getBlockNum(), tasknum);
    if( m_zombie ) return false;
    bool changed = false;
 
@@ -240,12 +238,10 @@ bool TaskRun::refresh( time_t currentTime, RenderContainer * renders, MonitorCon
    int diff = currentTime - m_progress->time_done;
    if (diff > af::Environment::getTaskUpdateTimeoutWarning())
    {
-        std::cout << af::time2str() << ": WARNING:"
-                  << " currenttime: " << currentTime
-                  << " m_progress->time_done: " << m_progress->time_done
-                  << " (difference: " << diff << ")"
-                  << " af::Environment::getTaskUpdateTimeout() " << af::Environment::getTaskUpdateTimeout()
-                  << std::endl;
+        AF_WARN << "currenttime: " << currentTime
+                << " m_progress->time_done: " << m_progress->time_done
+                << " (difference: " << diff << ")"
+                << " af::Environment::getTaskUpdateTimeout() " << af::Environment::getTaskUpdateTimeout();
    }
    if(( m_stopTime == 0) && ( diff > af::Environment::getTaskUpdateTimeout()))
    {
@@ -266,12 +262,11 @@ bool TaskRun::refresh( time_t currentTime, RenderContainer * renders, MonitorCon
 
 void TaskRun::stop( const std::string & message, RenderContainer * renders, MonitorContainer * monitoring)
 {
-//printf("TaskRun::stop: %s[%d][%d] HostID=%d\n\t%s\n", block->job->getName().toUtf8().data(), block->data->getBlockNum(), tasknum, hostId, message.toUtf8().data());
    if( m_zombie ) return;
    if( m_stopTime ) return;
    if( m_exec == NULL)
    {
-      AFERRAR("TaskRun::stop: %s[%d][%d] Task executable is NULL.", m_block->m_job->getName().c_str(), m_block->m_data->getBlockNum(), m_tasknum)
+      AF_ERR << m_block->m_job->getName() << "[" << m_block->m_data->getBlockNum() << "][" << m_tasknum << "] Task executable is NULL.";
       return;
    }
    m_stopTime = time( NULL);
@@ -283,14 +278,16 @@ void TaskRun::stop( const std::string & message, RenderContainer * renders, Moni
       if( render ) render->stopTask( m_exec);
    }
 
-   std::cout << af::time2str() << ": Stop task [job=" << m_block->m_job->getId() << ", task=" << m_task->getNumber() << "] on render #" << m_hostId << "(message: " << message << ")" << std::endl;
+   AF_LOG << "Stop task [job=" << m_block->m_job->getId()
+          << ", task=" << m_task->getNumber()
+          << "] on render #" << m_hostId
+          << "(message: " << message << ")";
 
    m_task->v_appendLog( message);
 }
 
 void TaskRun::finish( const std::string & message, RenderContainer * renders, MonitorContainer * monitoring)
 {
-//printf("TaskRun::finish: %s[%d][%d] HostID=%d\n\t%s\n", block->job->getName().toUtf8().data(), block->data->getBlockNum(), tasknum, hostId, message.toUtf8().data());
    if( m_zombie ) return;
 
    m_stopTime = 0;
@@ -336,10 +333,10 @@ void TaskRun::listen( af::MCListenAddress & mclisten, RenderContainer * renders)
    if( m_hostId == 0 ) return;
    if( m_exec == NULL)
    {
-      AFERRAR("TaskRun::listen: %s[%d][%d] Task executable is NULL.", m_block->m_job->getName().c_str(), m_block->m_data->getBlockNum(), m_tasknum)
+      AF_ERR << m_block->m_job->getName() << "[" << m_block->m_data->getBlockNum() << "][" << m_tasknum << "] Task executable is NULL.";
       return;
    }
-printf("Listening running task:"); mclisten.v_stdOut();
+   AF_LOG << "Listening running task: " << mclisten;
    RenderContainerIt rendersIt( renders);
    RenderAf * render = rendersIt.getRender( m_hostId);
    if( render != NULL) render->sendOutput( mclisten, m_block->m_job->getId(), m_block->m_data->getBlockNum(), m_tasknum);

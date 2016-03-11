@@ -209,6 +209,8 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
 
 	if( false == i_msg->isReceiving())
 	{
+        if( i_msg->type() == af::Msg::TRenderDeregister)
+            AF_DEBUG << "TRenderDeregister sent, not receiving!";
         sp.release( i_address);
 		return NULL;
 	}
@@ -253,7 +255,7 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
     af::Msg * o_msg = new af::Msg();
     if( false == af::msgread( socketfd, o_msg))
     {
-        AF_ERR << "Reading binary answer failed";
+        AF_ERR << "Reading binary answer failed (in response to " << i_msg << ")";
         sp.close( i_address);
         delete o_msg;
         o_ok = false;
@@ -486,6 +488,8 @@ af::Msg * af::msgsend( Msg * i_msg, bool & o_ok, VerboseMode i_verbose )
 
 	if( i_msg->addressesCount() < 1)
 		return NULL;
+
+    AF_DEBUG << "not returned!";
 
 	bool ok;
 	const std::list<af::Address> * addresses = i_msg->getAddresses();

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "../libafanasy/logger.h"
 #include "../libafanasy/msgclasses/mcgeneral.h"
 #include "../libafanasy/msgclasses/mclistenaddress.h"
 #include "../libafanasy/msgclasses/mctaskup.h"
@@ -23,6 +24,7 @@ void threadRunJSON( ThreadArgs * i_args, const af::Msg * i_msg);
 
 void threadRunCycleCase( ThreadArgs * i_args, af::Msg * i_msg)
 {
+    AF_DEBUG  << "new message: " << *i_msg;
 switch ( i_msg->type())
 {
 	case af::Msg::THTTP:
