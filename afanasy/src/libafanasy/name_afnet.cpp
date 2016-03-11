@@ -266,7 +266,7 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
 	return o_msg;
 }
 
-bool msgsendonlytoaddress( const af::Msg * i_msg, const af::Address & i_address)
+bool af::msgsendonlytoaddress( const af::Msg * i_msg, const af::Address & i_address)
 {
     af::SocketPool &sp = af::Environment::getSocketPool();
 
@@ -547,7 +547,7 @@ bool af::msgsendonly( Msg * i_msg )
 
     if( false == i_msg->addressIsEmpty())
     {
-        if (false == ::msgsendonlytoaddress( i_msg, i_msg->getAddress()))
+        if (false == af::msgsendonlytoaddress( i_msg, i_msg->getAddress()))
             return false;
     }
 
@@ -559,7 +559,7 @@ bool af::msgsendonly( Msg * i_msg )
     std::list<af::Address>::const_iterator it;
     for(it = addresses->begin() ; it != addresses->end() ; it++)
     {
-        if ( false == ::msgsendonlytoaddress( i_msg, *it))
+        if ( false == af::msgsendonlytoaddress( i_msg, *it))
         {
             // Store an address that message was failed to send to
             i_msg->setAddress( *it);

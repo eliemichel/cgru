@@ -7,9 +7,9 @@
 #include <fcntl.h>
 
 extern bool AFRunning;
-af::MsgStat mgstat;
 
 using namespace af;
+af::MsgStat mgstat2;
 
 ReceivingMsgQueue::ReceivingMsgQueue(const std::string &QueueName, AfQueue::StartTread i_start_thread)
     : AfQueue::AfQueue( QueueName, i_start_thread)
@@ -23,8 +23,11 @@ ReceivingMsgQueue::ReceivingMsgQueue(const std::string &QueueName, AfQueue::Star
 
 bool ReceivingMsgQueue::addSocket(int socketfd)
 {
+    AF_DEBUG << "Adding socket to receiving queue";
     SocketInfo *si = new SocketInfo(socketfd);
+    lock();
     m_sockets_info.insert(si);
+    unlock();
 
     struct epoll_event ev;
     ev.events = EPOLLIN;
@@ -39,7 +42,8 @@ bool ReceivingMsgQueue::addSocket(int socketfd)
 void ReceivingMsgQueue::processItem(AfQueueItem *item)
 {
     Msg *msg = static_cast<Msg*>(item);
-    mgstat.put( msg->type(), msg->writeSize());
+    mgstat2.put( msg->type(), msg->writeSize());
+    AF_DEBUG << "Received message: " << msg;
 }
 
 void ReceivingMsgQueue::run()
@@ -60,8 +64,11 @@ void ReceivingMsgQueue::run()
         AF_DEBUG << "epoll ready";
         if (nfds == -1) {
             AF_ERR << "epoll_wait: " << strerror(errno);
-            AFRunning = false;
-            break;
+            if (errno != EINTR)
+            {
+                AFRunning = false;
+                break;
+            }
         }
 
         for (n = 0 ; n < nfds ; ++n) {
@@ -113,8 +120,9 @@ void ReceivingMsgQueue::run()
     // Free remaining sockets
     for (std::set<SocketInfo*>::iterator it = m_sockets_info.begin() ; it != m_sockets_info.end() ; it++)
     {
-        close((*it)->sfd);
-        delete *it;
+        si = *it;
+        close(si->sfd);
+        delete si;
     }
     m_sockets_info.clear();
 }
@@ -142,6 +150,7 @@ int ReceivingMsgQueue::read_from_socket(SocketInfo *si) {
     AfQueueItem *item;
 
     remaining = si->to_read - si->read_pos;
+    AF_DEBUG << "Receiving message on #" << si->sfd << ": step " << si->reading_state << ", remaining: " << remaining;
 
     // When the current step is finished (or if it's the initial step)
     // We loop because a step can be finished instantaneously (like reading the
@@ -198,7 +207,7 @@ int ReceivingMsgQueue::read_from_socket(SocketInfo *si) {
         return 1;
     }
 
-    si->to_read += read;
+    si->read_pos += read;
 
     return 0;
 }

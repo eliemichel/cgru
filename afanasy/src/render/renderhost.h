@@ -4,7 +4,8 @@
 
 #include "../libafanasy/msgclasses/mclistenaddress.h"
 
-#include "../libafanasy/msgqueue.h"
+#include "../libafanasy/receivingmsgqueue.h"
+#include "../libafanasy/emittingmsgqueue.h"
 #include "../libafanasy/render.h"
 
 #include "taskprocess.h"
@@ -22,7 +23,6 @@ public:
     /// Get singleton instance
     static RenderHost * getInstance();
 
-    inline void acceptMessage( af::Msg * i_msg) { m_msgAcceptQueue->pushMsg( i_msg);}
     void dispatchMessage( af::Msg * i_msg);
 
     /// Get incomming messages (blocking and not blocking versions)
@@ -109,9 +109,9 @@ private:
     std::vector<PyRes*> m_pyres;
 
     /// Queue of incoming messages
-    af::MsgQueue * m_msgAcceptQueue;
+    af::ReceivingMsgQueue * m_msgAcceptQueue;
     /// Active queue sending messages. Spawns another thread.
-    af::MsgQueue * m_msgDispatchQueue;
+    af::EmittingMsgQueue * m_msgDispatchQueue;
 
     /// Whether the render is connected or not
     bool m_connected;

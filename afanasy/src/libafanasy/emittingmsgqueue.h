@@ -14,6 +14,8 @@ namespace af
 class EmittingMsgQueue : public AfQueue
 {
 public:
+    EmittingMsgQueue( const std::string & QueueName, StartTread i_start_thread);
+
     /// Push message to emitting queue.
     inline bool pushMsg( Msg* msg) { return push( msg); }
 

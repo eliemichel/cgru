@@ -3,6 +3,7 @@
 
 #include "common/dlMutex.h"
 #include "address.h"
+#include "receivingmsgqueue.h"
 
 #include <cstring>
 #include <map>
@@ -68,6 +69,8 @@ public:
      */
     void close( const af::Address & i_address);
 
+    inline void subscribe(ReceivingMsgQueue *queue) { m_subscribers.push_back(queue); }
+
 private:
     /**
      * @brief initialize a socket and connect it
@@ -102,6 +105,9 @@ private:
     /// For each address, store a connected socket along with a mutex to
     /// prevent several processes to use the same socket simultaneously
     std::map<af::Address, std::pair<int, DlMutex>, AddressCompare> m_table;
+
+    /// This is terribly hacky but should not last (yeah, it should not)
+    std::vector<ReceivingMsgQueue*> m_subscribers;
 };
 
 } // namespace af

@@ -25,8 +25,15 @@ private:
         SocketInfo(int socketfd)
             : sfd(socketfd)
             , closed(false)
+            , msg(NULL)
             , reading_state(0)
         {}
+        ~SocketInfo()
+        {
+            if ( NULL != msg)
+                delete msg;
+        }
+
         int sfd;           ///< Socket File Descriptor
         bool closed;       ///< Whether this socket has been closed
         af::Msg *msg;      ///< Msg being received

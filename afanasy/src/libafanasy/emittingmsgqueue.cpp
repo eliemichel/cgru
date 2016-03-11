@@ -3,6 +3,11 @@
 
 using namespace af;
 
+EmittingMsgQueue::EmittingMsgQueue(const std::string &QueueName, AfQueue::StartTread i_start_thread)
+    : AfQueue::AfQueue( QueueName, i_start_thread)
+{
+}
+
 void EmittingMsgQueue::processItem( AfQueueItem* item)
 {
     Msg * msg = (Msg*)item;
@@ -26,6 +31,7 @@ void EmittingMsgQueue::processItem( AfQueueItem* item)
          if( msg->canRetrySending())
          {
              this->push( msg, true /* front */);
+             return;
          }
          else
          {

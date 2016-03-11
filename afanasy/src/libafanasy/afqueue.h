@@ -73,7 +73,7 @@ protected:
       This function is called from a thread and waits on our
       counting semaphore.
    */
-   void run();
+   virtual void run();
 
 
    std::string name;

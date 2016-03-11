@@ -35,7 +35,11 @@ bool SocketPool::get(const af::Address & i_address, int &socketfd, bool check)
         // But we did  not lock before because we assume initSocket to take some time
         // and try to reduce as much as possible the locking time.
         if( m_table.count(i_address) == 0)
+        {
             m_table[i_address] = std::make_pair<int, DlMutex>(socketfd, DlMutex());
+            for(std::vector<ReceivingMsgQueue*>::iterator it = m_subscribers.begin() ; it != m_subscribers.end() ; it++)
+                (*it)->addSocket(socketfd);
+        }
         else
             closesocket(socketfd);
         m_global_mutex.Release();
@@ -143,6 +147,7 @@ bool SocketPool::initSocket( const af::Address & i_address, int &socketfd)
     }
 
     AF_DEBUG << "connected";
+
     return true;
 }
 

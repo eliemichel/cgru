@@ -5,6 +5,7 @@
 
 #include "common/dlScopeLocker.h"
 
+#include "logger.h"
 #include "name_af.h"
 
 #define AFOUTPUT

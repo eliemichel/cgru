@@ -9,6 +9,8 @@
 #include "../libafanasy/logger.h"
 #include "../libafanasy/environment.h"
 #include "../libafanasy/msg.h"
+#include "../libafanasy/receivingmsgqueue.h"
+#include "../libafanasy/emittingmsgqueue.h"
 
 #include "pyres.h"
 #include "res.h"
@@ -31,11 +33,9 @@ RenderHost::RenderHost():
 {
     if( af::Environment::hasArgument("-nor")) m_no_output_redirection = true;
 
-    m_msgAcceptQueue   = new af::MsgQueue("Messages Accept Queue",   af::AfQueue::e_no_thread    );
-    m_msgDispatchQueue = new af::MsgQueue("Messages Dispatch Queue", af::AfQueue::e_start_thread );
-    m_msgDispatchQueue->setReturnQueue( m_msgAcceptQueue);
-    m_msgDispatchQueue->returnNotSended();
-    m_msgDispatchQueue->setVerboseMode( af::VerboseOff);
+    m_msgAcceptQueue   = new af::ReceivingMsgQueue("Messages Accept Queue",  af::AfQueue::e_start_thread );
+    m_msgDispatchQueue = new af::EmittingMsgQueue("Messages Dispatch Queue", af::AfQueue::e_start_thread );
+    af::Environment::getSocketPool().subscribe(m_msgAcceptQueue);
 
     setOnline();
 
@@ -66,9 +66,9 @@ RenderHost::RenderHost():
     GetResources( m_host, m_hres);
     for( int i = 0; i < m_pyres.size(); i++) m_pyres[i]->update();
 
-    v_stdOut();
-    m_host.v_stdOut( true);
-    m_hres.v_stdOut( true);
+    AF_LOG << this;
+    AF_LOG << m_host;
+    AF_LOG << m_hres;
 }
 
 RenderHost::~RenderHost()
@@ -125,7 +125,6 @@ void RenderHost::setRegistered( int i_id)
     m_connected = true;
     m_id = i_id;
     m_first_valid_msg_id = af::Msg::getNextId(); // obsolete previously sent messages;
-    m_msgDispatchQueue->setVerboseMode( af::VerboseOn);
     setUpdateMsgType( af::Msg::TRenderUpdate);
     AF_LOG << "Render registered.";
 }
@@ -141,8 +140,6 @@ void RenderHost::connectionLost()
 
     // Stop all tasks:
     for( int t = 0; t < m_tasks.size(); t++) m_tasks[t]->stop();
-
-    m_msgDispatchQueue->setVerboseMode( af::VerboseOff);
 
     // Begin to try to register again:
     setUpdateMsgType( af::Msg::TRenderRegister);
