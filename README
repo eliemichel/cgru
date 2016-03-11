@@ -18,6 +18,13 @@ Logger:
 	be easily read and/or parsed. Some potential features are on-the-fly
 	verbosity switch, hierarchical log (indentation to see nested calls).
 
+Fire and Forget messages:
+	Instead of having broadcasted messages on one hand and "receiving" messages
+	that wait for an answer, switch to a system where all messages are sent on
+	one hand without caring about the response and responses are sent
+	separately, with a "response ID" specifying to which original message this
+	is an answer.
+
 
 Original README:
 ---

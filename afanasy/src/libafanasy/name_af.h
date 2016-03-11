@@ -245,6 +245,9 @@ namespace af
     /// Send a message to all its addresses and receive an answer if needed
     Msg * msgsend( Msg * i_msg, bool & o_ok, VerboseMode i_verbose);
 
+    bool msgsendonly( Msg * i_msg );
+    bool msgsendonlytoaddress( Msg * i_msg, af::Address i_address );
+
 	/// Close socket
 	void socketDisconnect( int i_sd, uint32_t i_response_type = -1);
 

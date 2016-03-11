@@ -266,6 +266,31 @@ af::Msg * msgsendtoaddress( const af::Msg * i_msg, const af::Address & i_address
 	return o_msg;
 }
 
+bool msgsendonlytoaddress( const af::Msg * i_msg, const af::Address & i_address)
+{
+    af::SocketPool &sp = af::Environment::getSocketPool();
+
+    assert( false == i_address.isEmpty());
+
+    int socketfd;
+    if( false == sp.get(i_address, socketfd, true /* check */))
+    {
+        AF_ERR << "connect failure for msgType '" << af::Msg::TNAMES[i_msg->type()] << "': " << i_address;
+        return false;
+    }
+
+    if( false == af::msgwrite( socketfd, i_msg))
+    {
+        AF_ERR << "can't send message to client: " << i_address;
+        sp.close( i_address);
+        return false;
+    }
+
+    sp.release(i_address);
+    return true;
+}
+
+
 void af::statwrite( af::Msg * msg)
 {
    mgstat.writeStat( msg);
@@ -489,8 +514,6 @@ af::Msg * af::msgsend( Msg * i_msg, bool & o_ok, VerboseMode i_verbose )
 	if( i_msg->addressesCount() < 1)
 		return NULL;
 
-    AF_DEBUG << "not returned!";
-
 	bool ok;
 	const std::list<af::Address> * addresses = i_msg->getAddresses();
     std::list<af::Address>::const_iterator it;
@@ -506,6 +529,45 @@ af::Msg * af::msgsend( Msg * i_msg, bool & o_ok, VerboseMode i_verbose )
 	}
 
 	return NULL;
+}
+
+/**
+ * @brief Send a message without waiting for an answer, even if the message is
+ * receiving. This call is blocking.
+ * @param i_msg message to send
+ * @return status
+ */
+bool af::msgsendonly( Msg * i_msg )
+{
+    if( i_msg->addressIsEmpty() && ( i_msg->addressesCount() == 0 ))
+    {
+        AF_ERR << "Message has no addresses to send to: " << i_msg;
+        return false;
+    }
+
+    if( false == i_msg->addressIsEmpty())
+    {
+        if (false == ::msgsendonlytoaddress( i_msg, i_msg->getAddress()))
+            return false;
+    }
+
+    if( i_msg->addressesCount() < 1)
+        return true;
+
+    bool ok;
+    const std::list<af::Address> * addresses = i_msg->getAddresses();
+    std::list<af::Address>::const_iterator it;
+    for(it = addresses->begin() ; it != addresses->end() ; it++)
+    {
+        if ( false == ::msgsendonlytoaddress( i_msg, *it))
+        {
+            // Store an address that message was failed to send to
+            i_msg->setAddress( *it);
+            return false;
+        }
+    }
+
+    return true;
 }
 
 /**

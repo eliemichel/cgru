@@ -84,7 +84,7 @@ RenderHost::~RenderHost()
         af::Msg msg( af::Msg::TRenderDeregister, this->getId());
         msg.setAddress( af::Environment::getServerAddress());
         bool ok;
-        af::msgsend( & msg, ok, af::VerboseOn);
+        dispatchMessage( &msg);
         m_connected = false;
     }
 

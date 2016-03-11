@@ -327,7 +327,7 @@ And when Render can't connect to Afanasy. Afanasy register new Render and send b
 	bool isReceiving() const { return m_receive; }
 
 	/// Set to recieve an answer from the same socket after send
-	void setSendFailed( bool i_value = true ) { m_sendfailed = i_value; }
+    void setSendFailed( bool i_value = true ) { ++m_sendfailedattempts; m_sendfailed = i_value; }
 
 	/// Set to recieve an answer from the same socket after send
 	bool wasSendFailed() { return m_sendfailed; }
@@ -353,6 +353,12 @@ And when Render can't connect to Afanasy. Afanasy register new Render and send b
 
 	/// Get addresses constant list pointer
 	inline const std::list<Address> * getAddresses() const { return &m_addresses;}
+
+    /// Whether one should keep on trying to send the message
+    inline bool canRetrySending() const { return m_sendfailedattempts < m_maxsendfailedattempts; }
+
+    /// Returns the number of attempts to send the message
+    inline int getSendingAttempts() const { return m_sendfailedattempts; }
 
 	void setTypeHTTP();
 //	void createHTTPHeader();
@@ -393,6 +399,8 @@ private:
 	std::list<Address> m_addresses;   ///< Addresses to dispatch message to.
 	bool m_receive;                   ///< Whether to recieve an answer on message request.
 	bool m_sendfailed;                ///< Message was failed to send.
+    int m_sendfailedattempts;         ///< number of attempts to sent the message that already failed
+    int m_maxsendfailedattempts;      ///< maximum number of attempts to send. Beyond this, canRetrySending returns false
 
 private:
     static int32_t ms_nextId;

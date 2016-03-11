@@ -54,7 +54,9 @@ Msg::Msg( const char * rawData, int rawDataLen, bool i_receiving):
 	m_buffer( NULL),
 	// This message not for write any more data. All data will be written in this constuctor.
 	// We will only read node parameters to constuct af::Af based classes.
-	m_writing( false)
+    m_writing( false),
+    m_sendfailedattempts(0),
+    m_maxsendfailedattempts(2) // TODO: unhardcode me!
 {
     m_id = Msg::ms_nextId++;
 
@@ -101,6 +103,9 @@ void Msg::construct()
 
 	m_buffer = NULL;
 	allocateBuffer( Msg::SizeBuffer);
+
+    m_sendfailedattempts = 0;
+    m_maxsendfailedattempts = 2; // TODO: unhardcode me!
 }
 
 bool Msg::allocateBuffer( int i_size, int i_copy_len, int i_copy_offset)
