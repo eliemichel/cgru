@@ -1,6 +1,7 @@
 #ifndef EMITTINGMSGQUEUE_H
 #define EMITTINGMSGQUEUE_H
 
+#include "logger.h"
 #include "afqueue.h"
 #include "msg.h"
 
@@ -17,7 +18,7 @@ public:
     EmittingMsgQueue( const std::string & QueueName, StartTread i_start_thread);
 
     /// Push message to emitting queue.
-    inline bool pushMsg( Msg* msg) { return push( msg); }
+    inline bool pushMsg( Msg* msg) { AF_DEBUG << "Queuing Msg: " << msg; return push( msg); }
 
 protected:
     void processItem( AfQueueItem* item);

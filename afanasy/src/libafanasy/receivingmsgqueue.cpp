@@ -206,7 +206,8 @@ int ReceivingMsgQueue::read_from_socket(SocketInfo *si) {
         }
     } else if (read == 0) {
         //si->msg->type = MT_QUIT;
-        return 1;
+        //return 1;
+        return -1;
     }
 
     si->read_pos += read;

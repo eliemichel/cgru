@@ -24,6 +24,8 @@ void EmittingMsgQueue::processItem( AfQueueItem* item)
         return;
     }
 
+    AF_DEBUG << "Emitting Msg: " << msg << " to " << msg->getAddress();
+
     if (false == af::msgsendonly( msg))
     {
          AF_WARN << "Unable to send message: " << msg;

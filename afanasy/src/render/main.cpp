@@ -175,10 +175,18 @@ void msgCase( af::Msg * msg, RenderHost &render)
 		return;
 
     int32_t rid = msg->getRid();
-    AF_DEBUG << "RID=" << rid;
     if( rid >= 0 && rid < render.getFirstValidMsgId())
     {
         AF_WARN << "Ignoring obsolete message: " << *msg << " (rid=" << rid << ")";
+
+        // If the server registered this render twice, unregister the extra one
+        if( msg->type() == af::Msg::TRenderId && msg->int32() != render.getId() )
+        {
+            af::Msg *res = new af::Msg( af::Msg::TRenderDeregister, msg->int32());
+            res->setAddress( msg->getAddress());
+            render.dispatchMessage( res);
+        }
+
         delete msg;
         return;
     }

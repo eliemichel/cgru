@@ -81,10 +81,9 @@ RenderHost::~RenderHost()
     // Send deregister message if connected:
     if( m_connected )
     {
-        af::Msg msg( af::Msg::TRenderDeregister, this->getId());
-        msg.setAddress( af::Environment::getServerAddress());
-        bool ok;
-        dispatchMessage( &msg);
+        af::Msg *msg = new af::Msg( af::Msg::TRenderDeregister, this->getId());
+        msg->setAddress( af::Environment::getServerAddress());
+        dispatchMessage( msg);
         m_connected = false;
     }
 
