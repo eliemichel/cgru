@@ -174,9 +174,11 @@ void msgCase( af::Msg * msg, RenderHost &render)
     if( NULL == msg)
 		return;
 
-    if( msg->getRid() >= 0 && msg->getRid() < render.getFirstValidMsgId())
+    int32_t rid = msg->getRid();
+    AF_DEBUG << "RID=" << rid;
+    if( rid >= 0 && rid < render.getFirstValidMsgId())
     {
-        AF_WARN << "Ignoring obsolete message: " << *msg;
+        AF_WARN << "Ignoring obsolete message: " << *msg << " (rid=" << rid << ")";
         delete msg;
         return;
     }

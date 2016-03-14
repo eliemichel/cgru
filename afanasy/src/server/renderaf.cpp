@@ -225,14 +225,14 @@ void RenderAf::setTask( af::TaskExec *taskexec, MonitorContainer * monitoring, b
         m_msg_queue.push( msg);
 		std::string str = "Starting task: ";
 		str += taskexec->v_generateInfoString( false);
-        AF_LOG << ": Adding task [job=" << taskexec->getJobId() << ", block=" << taskexec->getBlockNum() << ", task=" << taskexec->getTaskNum() << "] to render [" << this << "]";
+        AF_LOG << "Adding task [job=" << taskexec->getJobId() << ", block=" << taskexec->getBlockNum() << ", task=" << taskexec->getTaskNum() << "] to render [" << this << "]";
 		appendTasksLog( str);
 	}
 	else
 	{
 		std::string str = "Captured by task: ";
 		str += taskexec->v_generateInfoString( false);
-        AF_LOG << ": Captured task [job=" << taskexec->getJobId() << ", block=" << taskexec->getBlockNum() << ", task=" << taskexec->getTaskNum() << "] to render [" << this << "]";
+        AF_LOG << "Captured task [job=" << taskexec->getJobId() << ", block=" << taskexec->getBlockNum() << ", task=" << taskexec->getTaskNum() << "] to render [" << this << "]";
 		appendTasksLog( str);
 	}
 }
@@ -255,7 +255,7 @@ void RenderAf::startTask( af::TaskExec *taskexec)
 		std::string str = "Starting service: ";
 		str += taskexec->v_generateInfoString( false);
 		appendLog( str);
-        AF_LOG << ": Starting task [job=" << taskexec->getJobId() << ", block=" << taskexec->getBlockNum() << ", task=" << taskexec->getTaskNum() << "] to render [" << this << "]";
+        AF_LOG << "Starting task [job=" << taskexec->getJobId() << ", block=" << taskexec->getBlockNum() << ", task=" << taskexec->getTaskNum() << "] to render [" << this << "]";
 
 		return;
 	}

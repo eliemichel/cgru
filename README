@@ -26,8 +26,21 @@ Fire and Forget messages:
 	is an answer.
 
 
-Original README:
----
+HOWTOs
+------
+
+Adding data to message header:
+	I had to do it to add the ID/ResponseID system, and it may be useful later
+	on as well.
+	1. Add new attribute to Msg class
+	2. Initialize it in Msg::construct() and the Msg ctors that don't call the
+	   later.
+	3. Edit Msg::rw_header
+	4. Change the Msg::SizeHeader value at the beginning of msg.cpp
+	5. Don't forget to call `rw_header( true);` when the new header is modified
+
+Original README
+---------------
 
 Layout
 

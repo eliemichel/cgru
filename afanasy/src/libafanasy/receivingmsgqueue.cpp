@@ -63,11 +63,13 @@ void ReceivingMsgQueue::run()
         nfds = epoll_wait(m_epfd, events, MAX_EVENTS, -1);
         AF_DEBUG << "epoll ready";
         if (nfds == -1) {
-            AF_ERR << "epoll_wait: " << strerror(errno);
-            if (errno != EINTR)
-            {
-                AFRunning = false;
+            switch (errno) {
+            case EINTR:
                 break;
+            default:
+                AF_ERR << "epoll_wait: " << strerror(errno);
+                AFRunning = false;
+                continue;
             }
         }
 

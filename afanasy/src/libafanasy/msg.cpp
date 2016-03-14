@@ -7,6 +7,7 @@
 #include "../include/afanasy.h"
 #include "../include/afversion.h"
 
+#include "logger.h"
 #include "msgclasses/mctest.h"
 #include "environment.h"
 #include "address.h"
@@ -20,7 +21,8 @@ using namespace af;
 const int Msg::Version = AFVERSION;
 
 // Version + Type + Integer = 12 bytes.
-const int Msg::SizeHeader        = 4 + 4 + 4;
+// + ID + Response ID
+const int Msg::SizeHeader        = 4 + 4 + 4 + 4 + 4;
 
 const int Msg::SizeBuffer        = 1 << 14;                 ///< Message reading buffer size = 16 Kilo bytes.
 const int Msg::SizeBufferLimit   = Msg::SizeBuffer << 12;   ///< Message buffer maximum size = 67 Mega bytes.
@@ -375,6 +377,8 @@ void Msg::rw_header( bool write)
 	rw_int32( m_version, m_buffer+offset, write); offset+=int32_size;
 	rw_int32( m_type,    m_buffer+offset, write); offset+=int32_size;
 	rw_int32( m_int32,   m_buffer+offset, write); offset+=int32_size;
+    rw_int32( m_id,      m_buffer+offset, write); offset+=int32_size;
+    rw_int32( m_rid,     m_buffer+offset, write); offset+=int32_size;
 
 	if(( false == write ) && ( false == checkValidness()))
 	{

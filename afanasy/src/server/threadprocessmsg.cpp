@@ -128,6 +128,10 @@ printf("Response: "); msg_response->v_stdOut();
 
 	response_type = msg_response->type();
 
+    // Set ResponseID
+    if( NULL != msg_response)
+        msg_response->setRid( msg_request->getId());
+
 	// Write response message back to client socket
 	writeMessage( i_args, msg_response);
 
