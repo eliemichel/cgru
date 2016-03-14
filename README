@@ -2,6 +2,10 @@
 /!\ Disclaimer: This branch is highly unstable and not supposed to work as is.
                 Use it carefully, or switch back to master.
 
+/!\ Warning: This branch has not been tested on Windows nor OSX. As it makes
+             use of `epoll`, it will require some changes to run on these
+             platforms.
+
 Ongoing work
 ------------
 
@@ -38,6 +42,12 @@ Adding data to message header:
 	3. Edit Msg::rw_header
 	4. Change the Msg::SizeHeader value at the beginning of msg.cpp
 	5. Don't forget to call `rw_header( true);` when the new header is modified
+
+Known bugs
+----------
+
+Many ERROR messages are actually correctly handled and so not fatal, especially
+those related to networking.
 
 Original README
 ---------------

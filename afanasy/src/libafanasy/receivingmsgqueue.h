@@ -15,6 +15,16 @@ namespace af
  */
 class ReceivingMsgQueue : public AfQueue
 {
+public:
+    /**
+     * @brief Type of socket waited by the epoll object
+     * This can be either a socket to read or a socket to accept from.
+     */
+    enum SocketType {
+        STListening,
+        STReceiving
+    };
+
 private:
     /**
      * @brief Information stored internally about a socket
@@ -24,6 +34,7 @@ private:
     {
         SocketInfo(int socketfd)
             : sfd(socketfd)
+            , type(STReceiving)
             , closed(false)
             , msg(NULL)
             , reading_state(0)
@@ -34,26 +45,58 @@ private:
                 delete msg;
         }
 
-        int sfd;           ///< Socket File Descriptor
-        bool closed;       ///< Whether this socket has been closed
-        af::Msg *msg;      ///< Msg being received
-        int to_read;       ///< How many bytes we have to read
-        int read_pos;      ///< How many bytes we already read
-        char *buffer;      ///< Reading buffer
-        int reading_state; ///< logical state of the message reading automaton (@see read_from_socket)
+        enum SocketType type; ///< Socket type (receiving or listening)
+        int sfd;              ///< Socket File Descriptor
+        bool closed;          ///< Whether this socket has been closed
+        af::Msg *msg;         ///< Msg being received
+        int to_read;          ///< How many bytes we have to read
+        int read_pos;         ///< How many bytes we already read
+        char *buffer;         ///< Reading buffer
+        int reading_state;    ///< logical state of the message reading automaton (@see read_from_socket)
     };
 
 public:
-    ReceivingMsgQueue( const std::string & QueueName, StartTread i_start_thread);
+    ReceivingMsgQueue(const std::string & QueueName, StartTread i_start_thread);
 
-    /// Return first message from queue. BLOCKING FUNCTION if \c block==AfQueue::e_wait.
+    /**
+     * @brief Return the first message from queue and remove it.
+     * This call is blocking if `i_block` is `AfQueue::e_wait`.
+     * @param i_block Whether the call should block or return NULL when the
+     * queue is empty.
+     * @return Popped message or NULL
+     */
     inline Msg* popMsg( WaitMode i_block ) { return (Msg*)pop(i_block); }
 
-    bool addSocket(int socketfd);
+    /**
+     * @brief Add an already openned and connected socket to the pool of
+     * sockets to read from.
+     * If type is STListening, every time a new connection incomes, its client
+     * socket is added using addSocket().
+     * @param socketfd descriptor of the socket to add
+     * @param type STReceiving or STListening
+     * @return status
+     */
+    bool addSocket(int socketfd, SocketType type=STReceiving);
 
+    /**
+     * @brief Listen to a given port
+     * This is a short for `open_listening_socket()` followed by
+     * `addListeningSocket()`.
+     * @param port port to listen to
+     * @return status
+     */
+    bool listenTo(int port);
 protected:
+    /**
+     * @brief Process new item.
+     * This function is called whenever a new message is ready
+     * @param item new message, to be casted into Msg*
+     */
     void processItem( AfQueueItem* item);
 
+    /**
+     * @brief Main loop of the independent receiving thread
+     */
     void run();
 
 private:
@@ -61,12 +104,6 @@ private:
     std::set<SocketInfo*> m_sockets_info;
 
 private:
-    /**
-     * @brief Set non-blocking mode to file descriptor
-     * @param fd File descriptor
-     * @return status
-     */
-    static bool setnonblocking(int fd);
     /**
      * @brief Receive data from client and consolidate it into header buffer or
      * forward it to the client's incoming message struct.
@@ -76,6 +113,31 @@ private:
      *          0 otherwise
      */
     int read_from_socket(SocketInfo *si);
+
+    /**
+     * @brief Accept new client and add it to the socket pool
+     * Note: This function has been partly imported from the main loop of
+     * server's `threadAcceptPort` function.
+     * @param listen_socket Listening socket bound to the incoming connection
+     * @return status
+     */
+    bool accept_new_client(int listen_sock);
+
+private:
+    /**
+     * @brief Set non-blocking mode to file descriptor
+     * @param fd File descriptor
+     * @return status
+     */
+    static bool setnonblocking(int fd);
+
+    /**
+     * @brief Open a new socket listening on a given port
+     * @param sfd reference to return the new socket
+     * @param port port to listen to
+     * @return status
+     */
+    static bool open_listening_socket(int &sfd, int port);
 
 };
 

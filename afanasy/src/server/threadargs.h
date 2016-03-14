@@ -7,6 +7,8 @@
 #endif
 
 #include "../libafanasy/name_af.h"
+#include "../libafanasy/emittingmsgqueue.h"
+#include "../libafanasy/receivingmsgqueue.h"
 
 class MonitorContainer;
 class RenderContainer;
@@ -20,6 +22,8 @@ struct ThreadArgs
 	JobContainer      * jobs;
 	UserContainer     * users;
 	af::MsgQueue      * msgQueue;
+    af::EmittingMsgQueue   * emittingMsgQueue;
+    af::ReceivingMsgQueue  * receivingMsgQueue;
 
 	int sd;
 	struct sockaddr_storage ss;

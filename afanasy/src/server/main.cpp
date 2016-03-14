@@ -28,31 +28,15 @@
 
 extern bool AFRunning;
 
+void set_signal_handlers();
+
 // Thread functions:
-void threadAcceptClient( void * i_arg );
 void threadRunCycle( void * i_args);
 
 #ifdef WINNT
 #define STDERR_FILENO 2
 #endif
 
-//####################### signal handlers ####################################
-void sig_int(int signum)
-{
-	char msg[] = "SIG INT\n";
-	int u = ::write( STDERR_FILENO, msg, sizeof(msg)-1);
-	AFRunning = false;
-}
-void sig_alrm(int signum)
-{
-	char msg [] = "SIG ALARM\n";
-	int u = ::write( STDERR_FILENO, msg, sizeof(msg)-1);
-}
-void sig_pipe(int signum)
-{
-	char msg [] = "SIG PIPE\n";
-	int u = ::write( STDERR_FILENO, msg, sizeof(msg)-1);
-}
 
 //######################################## main #########################################
 int main(int argc, char *argv[])
@@ -76,38 +60,7 @@ int main(int argc, char *argv[])
 	if( af::pathMakeDir(  ENV.getUsersDir(),   af::VerboseOn ) == false) return 1;
 	if( af::pathMakeDir(  ENV.getRendersDir(), af::VerboseOn ) == false) return 1;
 
-// Server for windows can be me more simple and not use signals at all.
-// Windows is not a server platform, so it designed for individual tests or very small companies with easy load.
-#ifndef _WIN32
-// Interrupt signals catch.
-// We need to catch interrupt signals to let threads to finish running function themselves.
-// This needed mostly fot queues to let them to finish to process last item.
-	struct sigaction actint;
-	bzero( &actint, sizeof(actint));
-	actint.sa_handler = sig_int;
-	sigaction( SIGINT,  &actint, NULL);
-	sigaction( SIGTERM, &actint, NULL);
-
-// SIGPIPE signal catch.
-// This is not an error for our application.
-	struct sigaction actpipe;
-	bzero( &actpipe, sizeof(actpipe));
-	actpipe.sa_handler = sig_pipe;
-	sigaction( SIGPIPE, &actpipe, NULL);
-
-// SIGALRM signal catch and block.
-// Special threads use alarm signal to unblock connect function.
-// Other threads should ignore this signal.
-	struct sigaction actalrm;
-	bzero( &actalrm, sizeof(actalrm));
-	actalrm.sa_handler = sig_alrm;
-	sigaction( SIGALRM, &actalrm, NULL);
-	sigset_t sigmask;
-	sigemptyset( &sigmask);
-	sigaddset( &sigmask, SIGALRM);
-	if( sigprocmask( SIG_BLOCK, &sigmask, NULL) != 0) perror("sigprocmask:");
-	if( pthread_sigmask( SIG_BLOCK, &sigmask, NULL) != 0) perror("pthread_sigmask:");
-#endif
+    set_signal_handlers();
 
 	// containers initialization
 	JobContainer jobs;
@@ -128,6 +81,12 @@ int main(int argc, char *argv[])
 	if( false == msgQueue.isInitialized()) 
 	  return 1;
 
+    af::EmittingMsgQueue emittingMsgQueue("EmittingMsgQueue", af::AfQueue::e_start_thread);
+    if( false == emittingMsgQueue.isInitialized()) return 1;
+
+    af::ReceivingMsgQueue receivingMsgQueue("ReceivingMsgQueue", af::AfQueue::e_start_thread);
+    if( false == receivingMsgQueue.isInitialized()) return 1;
+
 	// Thread aruguments.
 	ThreadArgs threadArgs;
 	threadArgs.jobs      = &jobs;
@@ -135,6 +94,8 @@ int main(int argc, char *argv[])
 	threadArgs.users     = &users;
 	threadArgs.monitors  = &monitors;
 	threadArgs.msgQueue  = &msgQueue;
+    threadArgs.emittingMsgQueue =  &emittingMsgQueue;
+    threadArgs.receivingMsgQueue = &receivingMsgQueue;
 
 	/*
 	  Creating the afcommon object will actually create many message queues
@@ -197,6 +158,7 @@ int main(int argc, char *argv[])
 	}
     AF_LOG << users.getCount() << " users registered from store.";
 	}
+
 	//
 	// Get Jobs from store:
 	//
@@ -263,8 +225,13 @@ int main(int argc, char *argv[])
 	  Start the thread that is responsible of listening to the port
 	  for incoming connections.
 	*/
-	DlThread ServerAccept;
-	ServerAccept.Start( &threadAcceptClient, &threadArgs);
+    int port = af::Environment::getServerPort();
+    if( false == receivingMsgQueue.listenTo(port))
+    {
+        AF_ERR << "Unable to listen to port " << port;
+        return 1;
+    }
+    AF_LOG << "Listening to port " << port << "...";
 
 	// Run cycle thread.
 	// All 'brains' are there.
@@ -285,4 +252,57 @@ int main(int argc, char *argv[])
 	af::destroy();
 
 	return 0;
+}
+
+//####################### signal handlers ####################################
+void sig_int(int signum)
+{
+    char msg[] = "SIG INT\n";
+    int u = ::write( STDERR_FILENO, msg, sizeof(msg)-1);
+    AFRunning = false;
+}
+void sig_alrm(int signum)
+{
+    char msg [] = "SIG ALARM\n";
+    int u = ::write( STDERR_FILENO, msg, sizeof(msg)-1);
+}
+void sig_pipe(int signum)
+{
+    char msg [] = "SIG PIPE\n";
+    int u = ::write( STDERR_FILENO, msg, sizeof(msg)-1);
+}
+void set_signal_handlers()
+{
+// Server for windows can be me more simple and not use signals at all.
+// Windows is not a server platform, so it designed for individual tests or very small companies with easy load.
+#ifndef _WIN32
+// Interrupt signals catch.
+// We need to catch interrupt signals to let threads to finish running function themselves.
+// This needed mostly fot queues to let them to finish to process last item.
+    struct sigaction actint;
+    bzero( &actint, sizeof(actint));
+    actint.sa_handler = sig_int;
+    sigaction( SIGINT,  &actint, NULL);
+    sigaction( SIGTERM, &actint, NULL);
+
+// SIGPIPE signal catch.
+// This is not an error for our application.
+    struct sigaction actpipe;
+    bzero( &actpipe, sizeof(actpipe));
+    actpipe.sa_handler = sig_pipe;
+    sigaction( SIGPIPE, &actpipe, NULL);
+
+// SIGALRM signal catch and block.
+// Special threads use alarm signal to unblock connect function.
+// Other threads should ignore this signal.
+    struct sigaction actalrm;
+    bzero( &actalrm, sizeof(actalrm));
+    actalrm.sa_handler = sig_alrm;
+    sigaction( SIGALRM, &actalrm, NULL);
+    sigset_t sigmask;
+    sigemptyset( &sigmask);
+    sigaddset( &sigmask, SIGALRM);
+    if( sigprocmask( SIG_BLOCK, &sigmask, NULL) != 0) perror("sigprocmask:");
+    if( pthread_sigmask( SIG_BLOCK, &sigmask, NULL) != 0) perror("pthread_sigmask:");
+#endif
 }
