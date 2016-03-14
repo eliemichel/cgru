@@ -64,7 +64,6 @@ bool ReceivingMsgQueue::listenTo(int port)
         return false;
     }
 
-    AF_LOG << "Listening to port " << port << "...";
     return true;
 }
 
