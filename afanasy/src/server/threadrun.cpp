@@ -52,7 +52,7 @@ struct MostReadyRender : public std::binary_function <RenderAf*,RenderAf*,bool>
 **/
 void threadRunCycle( void * i_args)
 {
-	AFINFO("ThreadRun::run:")
+    //AF_LOG << "ThreadRun::run";
 	ThreadArgs * a = (ThreadArgs*)i_args;
 
 	long long cycle = 0;
@@ -61,9 +61,7 @@ void threadRunCycle( void * i_args)
 
 	while( AFRunning)
 	{
-	#ifdef _DEBUG
-	printf("...................................\n");
-	#endif
+    AF_DEBUG << "...................................";
 
 	//
 	// Free authentication clients store:
@@ -75,16 +73,16 @@ void threadRunCycle( void * i_args)
 	//
 	// Lock containers:
 	//
-	AFINFO("ThreadRun::run: Locking containers...")
-	AfContainerLock jLock( a->jobs,     AfContainerLock::WRITELOCK);
-	AfContainerLock lLock( a->renders,  AfContainerLock::WRITELOCK);
-	AfContainerLock mlock( a->monitors, AfContainerLock::WRITELOCK);
-	AfContainerLock ulock( a->users,    AfContainerLock::WRITELOCK);
+    //AF_LOG << "ThreadRun::run: Locking containers...";
+    //AfContainerLock jLock( a->jobs,     AfContainerLock::WRITELOCK);
+    //AfContainerLock lLock( a->renders,  AfContainerLock::WRITELOCK);
+    //AfContainerLock mlock( a->monitors, AfContainerLock::WRITELOCK);
+    //AfContainerLock ulock( a->users,    AfContainerLock::WRITELOCK);
 
 	//
 	// Messages reaction:
 	//
-    AF_LOG << "ThreadRun::run: React on incoming messages";
+    //AF_LOG << "ThreadRun::run: React on incoming messages";
 
 	/*
 		Process all messages in our message queue. We do it without
@@ -102,15 +100,18 @@ void threadRunCycle( void * i_args)
     while( message = a->receivingMsgQueue->popMsg( af::AfQueue::e_no_wait) )
     {
         af::Msg *res = threadProcessMsgCase( a, message );
-        if( res->addressIsEmpty())
-            res->setAddress( message->getAddress());
-        a->emittingMsgQueue->pushMsg( res);
+        if( NULL != res)
+        {
+            if( res->addressIsEmpty())
+                res->setAddress( message->getAddress());
+            a->emittingMsgQueue->pushMsg( res);
+        }
     }
 
 	//
 	// Refresh data:
 	//
-	AFINFO("ThreadRun::run: Refreshing data:")
+    //AF_LOG << "ThreadRun::run: Refreshing data";
 	a->monitors ->refresh( NULL,        a->monitors);
 	a->jobs     ->refresh( a->renders,  a->monitors);
 	a->renders  ->refresh( a->jobs,     a->monitors);
@@ -120,7 +121,7 @@ void threadRunCycle( void * i_args)
 	//
 	// Jobs sloving:
 	//
-	AFINFO("ThreadRun::run: Solving jobs:")
+    //AF_LOG << "ThreadRun::run: Solving jobs";
 
 	int tasks_solved = 0;
 	std::list<RenderAf*> renders;
@@ -213,7 +214,7 @@ void threadRunCycle( void * i_args)
 	//
 	// Wake-On-Lan:
 	//
-	AFINFO("ThreadRun::run: Wake-On-Lan:")
+    //AF_LOG << "ThreadRun::run: Wake-On-Lan";
 	RenderContainerIt rendersIt( a->renders);
 	{
 		for( RenderAf *render = rendersIt.render(); render != NULL; rendersIt.next(), render = rendersIt.render())
@@ -238,13 +239,13 @@ void threadRunCycle( void * i_args)
 	//
 	// Dispatch events to monitors:
 	//
-	AFINFO("ThreadRun::run: dispatching monitor events:")
+    //AF_LOG << "ThreadRun::run: dispatching monitor events";
 	a->monitors->dispatch();
 
 	//
 	// Free Containers:
 	//
-	AFINFO("ThreadRun::run: deleting zombies:")
+    //AFINFO("ThreadRun::run: deleting zombies:")
 	a->monitors ->freeZombies();
 	a->renders  ->freeZombies();
 	a->jobs     ->freeZombies();
@@ -255,8 +256,8 @@ void threadRunCycle( void * i_args)
 	//
 	// Sleeping
 	//
-	AFINFO("ThreadRun::run: sleeping...")
-       af::sleep_sec(1);
+    //AF_LOG << "ThreadRun::run: sleeping...";
+    af::sleep_sec(1);
     /*
     std::clock_t new_tick = std::clock();
     // Accumulates time to wait, flushed by batches of an integer amount of seconds
