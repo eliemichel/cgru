@@ -49,6 +49,11 @@ Known bugs
 Many ERROR messages are actually correctly handled and so not fatal, especially
 those related to networking.
 
+If messages are sent to a non connected Render, behavior is undefined.
+
+Many `af::Environment::getSocketPool().set` are a little ad-hoc. Even the
+socket pool might need to be move somewhere else and stop being a global var.
+
 Original README
 ---------------
 

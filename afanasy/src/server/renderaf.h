@@ -7,6 +7,7 @@
 #include "../libafanasy/msgclasses/mctaskup.h"
 #include "../libafanasy/render.h"
 #include "../libafanasy/taskexec.h"
+#include "../libafanasy/emittingmsgqueue.h"
 
 #include "afnodesrv.h"
 
@@ -28,6 +29,8 @@ public:
 
 	// Initialize render in container:
 	bool initialize();
+
+    inline void setEmittingMsgQueue(af::EmittingMsgQueue *q) { m_emittingMsgQueue = q; }
 
 /// Set registration time ( and update time).
 	void setRegisterTime();
@@ -138,6 +141,8 @@ private:
 	std::list<std::string> m_tasks_log;							///< Tasks Log.
 
     std::queue<af::Msg*> m_msg_queue;  ///< Queue of messages to be sent
+
+    af::EmittingMsgQueue *m_emittingMsgQueue;
 
 private:
 	static RenderContainer * ms_renders;

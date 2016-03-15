@@ -5,6 +5,7 @@
 #include "address.h"
 #include "receivingmsgqueue.h"
 
+#include <iostream>
 #include <cstring>
 #include <map>
 
@@ -79,6 +80,11 @@ public:
     void close( const af::Address & i_address);
 
     inline void subscribe(ReceivingMsgQueue *queue) { m_subscribers.push_back(queue); }
+
+    std::ostream& output( std::ostream& stream) const;
+
+public:
+    friend std::ostream& operator<<( std::ostream& stream, const SocketPool &sp) { return sp.output( stream); }
 
 private:
     /**

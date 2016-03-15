@@ -121,6 +121,20 @@ void SocketPool::close( const af::Address & i_address)
     assert(m_table.count(i_address) == 0);
 }
 
+std::ostream& SocketPool::output( std::ostream& stream) const
+{
+    stream << "af::SocketPool [";
+    std::map<af::Address, std::pair<int, DlMutex>, AddressCompare>::const_iterator it;
+    for( it = m_table.begin() ; it != m_table.end() ; it++)
+    {
+        if( it != m_table.begin())
+            stream << ", ";
+        stream << it->first;
+    }
+    stream << "]";
+    return stream;
+}
+
 bool SocketPool::initSocket( const af::Address & i_address, int &socketfd)
 {
     struct sockaddr_storage addr;

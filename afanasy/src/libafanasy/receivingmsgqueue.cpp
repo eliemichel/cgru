@@ -41,6 +41,8 @@ bool ReceivingMsgQueue::addSocket(int socketfd, SocketType type)
 
     struct epoll_event ev;
     ev.events = EPOLLIN;
+    if (type == STReceiving)
+        ev.events |= EPOLLET; // edge triggering
     ev.data.ptr = static_cast<void*>(si);
     if(epoll_ctl(m_epfd, EPOLL_CTL_ADD, socketfd, &ev) == -1) {
         AF_ERR << "epoll_ctl: " << strerror(errno);
@@ -112,7 +114,7 @@ void ReceivingMsgQueue::run()
             case STReceiving:
                 s = read_from_socket(si);
                 if (s == -1) {
-                    AF_ERR << "client I/O error, closing connection";
+                    AF_ERR << "remote host I/O error, closing connection";
                     si->closed = 1;
                     close(si->sfd);
                 } else if (s == 1) { // TODO: 1 means that the message has to be handled by this loop
@@ -174,6 +176,7 @@ int ReceivingMsgQueue::read_from_socket(SocketInfo *si) {
         {
         case 0: // Init step
             si->msg = new Msg();
+            si->msg->setSocket(si->sfd);
             si->buffer = si->msg->buffer();
             si->to_read = af::Msg::SizeHeader;
             si->read_pos = 0;
@@ -190,6 +193,7 @@ int ReceivingMsgQueue::read_from_socket(SocketInfo *si) {
             }
             break;
         case 2: // Payload read
+            af::Environment::getSocketPool().set(si->msg->getAddress(), si->sfd);
             item  = (AfQueueItem *)si->msg;
             this->processItem(item);
             this->push(item);
@@ -210,6 +214,9 @@ int ReceivingMsgQueue::read_from_socket(SocketInfo *si) {
     if (read == -1) {
         switch (errno) {
         case EWOULDBLOCK:
+            return 0;
+        case EINTR:
+            read = 0;
             break;
         default:
             AF_ERR << "recv: " << strerror(errno);
@@ -223,7 +230,8 @@ int ReceivingMsgQueue::read_from_socket(SocketInfo *si) {
 
     si->read_pos += read;
 
-    return 0;
+    // Loop until EWOULDBLOCK or an error is raised, because we use edge triggered sockets
+    return read_from_socket(si);
 }
 
 bool ReceivingMsgQueue::accept_new_client(int listen_sock)
@@ -361,7 +369,7 @@ bool ReceivingMsgQueue::open_listening_socket(int &sfd, int port)
     // No IPv4 available
     if (it == ipv4.end())
     {
-        AF_ERR << "No addresses founed.";
+        AF_ERR << "No addresses found";
         return false;
     }
 

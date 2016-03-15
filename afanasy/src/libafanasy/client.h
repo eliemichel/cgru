@@ -34,6 +34,7 @@ public:
 			   { return m_address.equal(other->m_address);}
 
 	inline void setAddressIP( const Address & other) { m_address.setIP( other);}
+    inline void setAddress( const Address & other) { m_address = other;}
 
 /// Set registration time ( and update time).
 	virtual void setRegisterTime();

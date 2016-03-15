@@ -32,10 +32,10 @@ int32_t Msg::ms_nextId = 0;
 
 //
 //########################## Message constructors: (and destructor) ###########################
-Msg::Msg( int msgType, int msgInt, bool i_receiving)
+Msg::Msg(int msgType, int msgInt, bool i_receiving)
 {
-	construct();
-	set( msgType, msgInt, i_receiving);
+    construct();
+    set( msgType, msgInt, i_receiving);
 }
 
 Msg::Msg( int msgType, Af * afClass, bool i_receiving )
@@ -321,7 +321,16 @@ bool Msg::getStringList( std::list<std::string> & stringlist)
 	rw_StringList( stringlist, this);
 	// Reset written size to let to get strings again.
 	resetWrittenSize();
-	return true;
+    return true;
+}
+
+void Msg::setSocket(int sfd)
+{
+    struct sockaddr_storage addr;
+    socklen_t addrlen = sizeof(addr);
+    if( -1 == getpeername(sfd, (struct sockaddr*)&addr, &addrlen))
+        AF_ERR << "Error getting socket address";
+    this->setAddress(Address(&addr));
 }
 
 void Msg::setHeader( int i_type, int i_size, int i_offset, int i_bytes)

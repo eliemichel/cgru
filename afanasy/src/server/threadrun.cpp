@@ -84,7 +84,7 @@ void threadRunCycle( void * i_args)
 	//
 	// Messages reaction:
 	//
-    AF_LOG << "ThreadRun::run: React on incoming messages:";
+    AF_LOG << "ThreadRun::run: React on incoming messages";
 
 	/*
 		Process all messages in our message queue. We do it without
@@ -100,7 +100,12 @@ void threadRunCycle( void * i_args)
 		threadRunCycleCase( a, message );
 
     while( message = a->receivingMsgQueue->popMsg( af::AfQueue::e_no_wait) )
-        threadProcessMsgCase( a, message );
+    {
+        af::Msg *res = threadProcessMsgCase( a, message );
+        if( res->addressIsEmpty())
+            res->setAddress( message->getAddress());
+        a->emittingMsgQueue->pushMsg( res);
+    }
 
 	//
 	// Refresh data:

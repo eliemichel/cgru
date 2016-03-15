@@ -222,7 +222,7 @@ void RenderAf::setTask( af::TaskExec *taskexec, MonitorContainer * monitoring, b
 	{
 		af::Msg* msg = new af::Msg( af::Msg::TTask, taskexec);
 		msg->setAddress( this);
-        m_msg_queue.push( msg);
+        m_emittingMsgQueue->pushMsg(msg);
 		std::string str = "Starting task: ";
 		str += taskexec->v_generateInfoString( false);
         AF_LOG << "Adding task [job=" << taskexec->getJobId() << ", block=" << taskexec->getBlockNum() << ", task=" << taskexec->getTaskNum() << "] to render [" << this << "]";
@@ -250,7 +250,7 @@ void RenderAf::startTask( af::TaskExec *taskexec)
 
 		af::Msg* msg = new af::Msg( af::Msg::TTask, taskexec);
 		msg->setAddress( this);
-        m_msg_queue.push( msg);
+        m_emittingMsgQueue->pushMsg(msg);
 
 		std::string str = "Starting service: ";
 		str += taskexec->v_generateInfoString( false);
@@ -395,7 +395,7 @@ void RenderAf::exitClient( int type, JobContainer * jobs, MonitorContainer * mon
 	if( false == isOnline() ) return;
 	af::Msg* msg = new af::Msg( type);
 	msg->setAddress( this);
-    m_msg_queue.push( msg);
+    m_emittingMsgQueue->pushMsg(msg);
 	offline( jobs, af::TaskExec::UPRenderExit, monitoring);
 }
 
@@ -435,7 +435,7 @@ void RenderAf::wolSleep( MonitorContainer * monitoring)
 
 	af::Msg* msg = new af::Msg( af::Msg::TClientWOLSleepRequest);
 	msg->setAddress( this);
-    m_msg_queue.push( msg);
+    m_emittingMsgQueue->pushMsg(msg);
 }
 
 void RenderAf::wolWake(  MonitorContainer * i_monitoring, const std::string & i_msg)
@@ -478,7 +478,7 @@ void RenderAf::stopTask( int jobid, int blocknum, int tasknum, int number)
 	af::MCTaskPos taskpos( jobid, blocknum, tasknum, number);
 	af::Msg* msg = new af::Msg( af::Msg::TRenderStopTask, &taskpos);
 	msg->setAddress( this);
-    m_msg_queue.push( msg);
+    m_emittingMsgQueue->pushMsg(msg);
 }
 
 void RenderAf::taskFinished( const af::TaskExec * taskexec, MonitorContainer * monitoring)
@@ -718,7 +718,7 @@ void RenderAf::sendOutput( af::MCListenAddress & mclisten, int JobId, int Block,
 {
 	af::Msg * msg = new af::Msg( af::Msg::TTaskListenOutput, &mclisten);
 	msg->setAddress( this);
-    m_msg_queue.push( msg);
+    m_emittingMsgQueue->pushMsg(msg);
 }
 
 void RenderAf::appendTasksLog( const std::string & message)
@@ -927,7 +927,7 @@ void RenderAf::closeLostTask( const af::MCTaskUp &taskup)
 	af::MCTaskPos taskpos( taskup.getNumJob(), taskup.getNumBlock(), taskup.getNumTask(), taskup.getNumber());
 	af::Msg* msg = new af::Msg( af::Msg::TRenderCloseTask, &taskpos);
 	msg->setAddress( render);
-    render->m_msg_queue.push( msg);
+    render->m_emittingMsgQueue->pushMsg(msg);
 }
 
 af::Msg * RenderAf::jsonWriteSrvFarm() const

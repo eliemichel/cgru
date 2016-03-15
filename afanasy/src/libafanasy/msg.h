@@ -61,6 +61,10 @@ public:
     /// Get String ( if message type is TStringList ).
     bool getStringList( std::list<std::string> & stringlist);
 
+    /// Attache a socket to the Msg (actually jut get its address, but the
+    /// socket will come in the future)
+    void setSocket(int sfd);
+
 /**   IMPORTANT!
 ***   messages with (type < MText) MUST NOT have any data to be valid:
 ***   (( mdata == NULL) && ( data_len == 0)) ALWAYS !
