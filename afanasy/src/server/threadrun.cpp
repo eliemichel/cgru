@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <ctime>
 
+#include "../libafanasy/logger.h"
 #include "../libafanasy/environment.h"
 #include "../libafanasy/msgqueue.h"
 

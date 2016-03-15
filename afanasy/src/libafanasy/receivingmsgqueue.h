@@ -45,6 +45,12 @@ private:
                 delete msg;
         }
 
+        void close()
+        {
+            ::close(sfd);
+            closed = 1;
+        }
+
         enum SocketType type; ///< Socket type (receiving or listening)
         int sfd;              ///< Socket File Descriptor
         bool closed;          ///< Whether this socket has been closed
@@ -53,6 +59,17 @@ private:
         int read_pos;         ///< How many bytes we already read
         char *buffer;         ///< Reading buffer
         int reading_state;    ///< logical state of the message reading automaton (@see read_from_socket)
+    };
+
+    /**
+     * @brief Status returned by read_from_socket to the epoll waiting loop
+     */
+    enum SocketInfoRead
+    {
+        SIR_ERR = -1,   ///< An error occurred
+        SIR_OK = 0,     ///< Socket has been correctly processed, nothing to say
+        SIR_QUIT,       ///< Client closed the connection cleanly
+        SIR_DIRTY_QUIT, ///< Client closed the connection in the middle of a message
     };
 
 public:

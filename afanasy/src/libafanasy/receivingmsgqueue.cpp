@@ -28,18 +28,36 @@ ReceivingMsgQueue::ReceivingMsgQueue(const std::string &QueueName, AfQueue::Star
 
 bool ReceivingMsgQueue::addSocket(int socketfd, SocketType type)
 {
+    SocketInfo *si;
+    int s;
+    struct epoll_event ev;
+
+    ReceivingMsgQueue::setnonblocking(socketfd);
+
     if (type == STListening) {
         AF_DEBUG << "Adding listening socket to receiving queue";
     } else {
         AF_DEBUG << "Adding socket to receiving queue";
     }
-    SocketInfo *si = new SocketInfo(socketfd);
+
+    si = new SocketInfo(socketfd);
     si->type = type;
+
+    // If this is receiving, we start reading it because connections are edge
+    // triggered so nothing would trigger for the already queued bytes.
+    if (type == STReceiving) {
+        s = read_from_socket(si);
+        if (s == -1) {
+            AF_ERR << "remote host I/O error, closing connection";
+            close(si->sfd);
+            return false;
+        }
+    }
+
     lock();
     m_sockets_info.insert(si);
     unlock();
 
-    struct epoll_event ev;
     ev.events = EPOLLIN;
     if (type == STReceiving)
         ev.events |= EPOLLET; // edge triggering
@@ -112,25 +130,22 @@ void ReceivingMsgQueue::run()
                 accept_new_client(si->sfd);
                 break;
             case STReceiving:
-                s = read_from_socket(si);
-                if (s == -1) {
+                switch(read_from_socket(si)) {
+                case SIR_ERR:
                     AF_ERR << "remote host I/O error, closing connection";
-                    si->closed = 1;
-                    close(si->sfd);
-                } else if (s == 1) { // TODO: 1 means that the message has to be handled by this loop
-                    /*switch (si->msg->type) {
-                    case Msg::TRenderDeregister:
-                        AF_DEBUG << "client closed connection or quit";
-                        si->closed = 1;
-                        close(si->sock);
-                        break;
-                    case MT_KILL_SERVER:
-                        AF_DEBUG << "client requested server to terminate";
-                        terminate();
-                        break;
-                    default:
-                        assert(0); /* read_from_socket upwarded a message that epoll_wait loop does not understand *
-                    }*/
+                    si->close();
+                    break;
+                case SIR_OK:
+                    break;
+                case SIR_DIRTY_QUIT:
+                    AF_WARN << "remote host interrupted the connection in the middle of a message";
+                    si->close();
+                    break;
+                case SIR_QUIT:
+                    si->close();
+                    break;
+                default:
+                    assert(0); // Every case should be handled
                 }
                 break;
             }
@@ -214,23 +229,27 @@ int ReceivingMsgQueue::read_from_socket(SocketInfo *si) {
     if (read == -1) {
         switch (errno) {
         case EWOULDBLOCK:
-            return 0;
+            return SIR_OK;
         case EINTR:
             read = 0;
             break;
         default:
             AF_ERR << "recv: " << strerror(errno);
-            return -1;
+            return SIR_ERR;
         }
     } else if (read == 0) {
-        //si->msg->type = MT_QUIT;
-        //return 1;
-        return -1;
+        if (si->reading_state == 0) {
+            return SIR_QUIT;
+        } else {
+            return SIR_DIRTY_QUIT;
+        }
     }
 
     si->read_pos += read;
 
-    // Loop until EWOULDBLOCK or an error is raised, because we use edge triggered sockets
+    // Loop until EWOULDBLOCK or an error is raised.
+    // This is important because we use edge triggered sockets so they must be
+    // completely flushed.
     return read_from_socket(si);
 }
 
@@ -349,7 +368,7 @@ bool ReceivingMsgQueue::open_listening_socket(int &sfd, int port)
 
         ai = *it;
 
-        sfd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+        sfd = socket(ai->ai_family, ai->ai_socktype | SOCK_NONBLOCK, ai->ai_protocol);
         if (sfd == -1) {
             AF_WARN << "socket: " << strerror(errno);
             continue;
