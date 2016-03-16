@@ -24,7 +24,7 @@ void EmittingMsgQueue::processItem( AfQueueItem* item)
         return;
     }
 
-    AF_DEBUG << "Emitting Msg: " << msg << " to " << msg->getAddress();
+    AF_DEBUG << "Emitting Msg: " << msg << " to " << msg->getAddress() << " (payload: " << msg->dataLen() << " bytes)";
 
     if (false == af::msgsendonly( msg))
     {

@@ -54,6 +54,17 @@ If messages are sent to a non connected Render, behavior is undefined.
 Many `af::Environment::getSocketPool().set` are a little ad-hoc. Even the
 socket pool might need to be move somewhere else and stop being a global var.
 
+When sending messages to a render, the code should refere to the render ID
+instead of the raw address and resolution into an actual address should be
+performed by the emitting queue.
+
+Sometimes the server stops directly on start-up
+
+Server does not handle SIGINT correctly (one of the threads keep on running)
+
+When the task is terminated too quickly, the render has not propagated its ID
+yet when the TTaskProgress Msg is sent.
+
 Original README
 ---------------
 

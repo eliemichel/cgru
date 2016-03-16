@@ -248,10 +248,6 @@ namespace af
     bool msgsendonly( Msg * i_msg );
     bool msgsendonlytoaddress( const af::Msg * i_msg, const af::Address & i_address);
 
-	/// Close socket
-	void socketDisconnect( int i_sd, uint32_t i_response_type = -1);
-
-
 	// Python:
 	bool PyGetString( PyObject * i_obj, std::string & o_str, const char * i_err_info = NULL);
 	bool PyGetStringList( PyObject * i_obj, std::vector<std::string> & o_list, const char * i_err_info = NULL);

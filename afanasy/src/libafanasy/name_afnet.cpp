@@ -569,33 +569,3 @@ bool af::msgsendonly( Msg * i_msg )
 
     return true;
 }
-
-/**
- * @brief close socket
- * If protocol was HTTP, flush remaining data and wait for the client to close
- * the connection
- * @param i_sd socket to close
- * @param i_response_type type of message sent through it
- */
-void af::socketDisconnect( int i_sd, uint32_t i_response_type)
-{
-	if( af::Environment::isServer() && 
-		( i_response_type != af::Msg::THTTP ) &&
-		( i_response_type != af::Msg::THTTPGET ))
-	{
-		// Server waits client have closed socket first:
-		char buf[256];
-		int r = 1;
-		while( r > 0 )
-		{
-			#ifdef WINNT
-			r = recv( i_sd, buf, af::Msg::SizeHeader, 0);
-			#else
-			r = read( i_sd, buf, af::Msg::SizeHeader);
-			#endif
-		}
-	}
-
-	closesocket( i_sd);
-}
-

@@ -105,7 +105,7 @@ void ReceivingMsgQueue::run()
     while( AFRunning )
     {
         nfds = epoll_wait(m_epfd, events, MAX_EVENTS, -1);
-        AF_DEBUG << "epoll ready: nfds=" << nfds;
+        //AF_DEBUG << "epoll ready: nfds=" << nfds;
         if (nfds == -1) {
             switch (errno) {
             case EINTR:
@@ -180,7 +180,7 @@ int ReceivingMsgQueue::read_from_socket(SocketInfo *si) {
     AfQueueItem *item;
 
     remaining = si->to_read - si->read_pos;
-    AF_DEBUG << "Receiving message on #" << si->sfd << ": step " << si->reading_state << ", remaining: " << remaining;
+    //AF_DEBUG << "Receiving message on #" << si->sfd << ": step " << si->reading_state << ", remaining: " << remaining;
 
     // When the current step is finished (or if it's the initial step)
     // We loop because a step can be finished instantaneously (like reading the
@@ -238,9 +238,10 @@ int ReceivingMsgQueue::read_from_socket(SocketInfo *si) {
             return SIR_ERR;
         }
     } else if (read == 0) {
-        if (si->reading_state == 0) {
+        if (si->reading_state == 0 || si->reading_state == 1 && si->read_pos == 0) {
             return SIR_QUIT;
         } else {
+            AF_WARN << "Remaining: " << remaining << " bytes";
             return SIR_DIRTY_QUIT;
         }
     }
