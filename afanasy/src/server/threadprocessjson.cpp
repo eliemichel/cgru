@@ -15,6 +15,7 @@
 #include "../include/macrooutput.h"
 
 af::Msg * jsonSaveObject( rapidjson::Document & i_obj);
+void threadRunCycleCase( ThreadArgs * i_args, af::Msg * i_msg);
 
 af::Msg * threadProcessJSON( ThreadArgs * i_args, af::Msg * i_msg)
 {
@@ -301,7 +302,7 @@ af::Msg * threadProcessJSON( ThreadArgs * i_args, af::Msg * i_msg)
 	}
 	else if( document.HasMember("action"))
 	{
-		i_args->msgQueue->pushMsg( i_msg);
+        threadRunCycleCase( i_args, i_msg );
 		// To not to detele it, set to NULL, as it pushed to another queue
 		i_msg = NULL;
 		o_msg_response = af::jsonMsg("{\"status\":\"OK\"}");

@@ -20,7 +20,6 @@
 extern bool AFRunning;
 
 // Messages reaction case function
-void threadRunCycleCase( ThreadArgs * i_args, af::Msg * i_msg);
 af::Msg * threadProcessMsgCase( ThreadArgs * i_args, af::Msg * i_msg);
 
 struct MostReadyRender : public std::binary_function <RenderAf*,RenderAf*,bool>
@@ -95,9 +94,6 @@ void threadRunCycle( void * i_args)
 	*/
 
 	af::Msg *message;
-	while( message = a->msgQueue->popMsg( af::AfQueue::e_no_wait) )
-		threadRunCycleCase( a, message );
-
     while( message = a->receivingMsgQueue->popMsg( af::AfQueue::e_no_wait) )
     {
         af::Msg *res = threadProcessMsgCase( a, message );

@@ -28,6 +28,7 @@
 #include "../include/macrooutput.h"
 
 af::Msg * threadProcessJSON( ThreadArgs * i_args, af::Msg * i_msg);
+void threadRunCycleCase( ThreadArgs * i_args, af::Msg * i_msg);
 
 af::Msg* threadProcessMsgCase( ThreadArgs * i_args, af::Msg * i_msg)
 {
@@ -80,7 +81,7 @@ af::Msg* threadProcessMsgCase( ThreadArgs * i_args, af::Msg * i_msg)
 	case af::Msg::TConfirm:
 	{
 		printf("Thread process message: Msg::TConfirm: %d\n", i_msg->int32());
-		i_args->msgQueue->pushMsg( new af::Msg( af::Msg::TConfirm, 1));
+        threadRunCycleCase( i_args, new af::Msg( af::Msg::TConfirm, 1) );
 		o_msg_response = new af::Msg( af::Msg::TConfirm, 1 - i_msg->int32());
 		break;
 	}
@@ -591,7 +592,7 @@ af::Msg* threadProcessMsgCase( ThreadArgs * i_args, af::Msg * i_msg)
 	case af::Msg::TMonitorMessage:
 	{
 		// Push message for run cycle thread.
-		i_args->msgQueue->pushMsg( i_msg);
+        threadRunCycleCase( i_args, i_msg);
 		// Need to return here to not to delete input message (i_msg) later.
 		return o_msg_response;
 		//  ( o_msg_response is NULL in all cases except Msg::TTaskUpdateState,

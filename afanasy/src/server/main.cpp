@@ -75,12 +75,6 @@ int main(int argc, char *argv[])
 	MonitorContainer monitors;
 	if( false == monitors.isInitialized()) return 1;
 	
-	// Message Queue initialization, but without thread start.
-	// Run cycle queue will read this messages itself.
-	af::MsgQueue msgQueue("RunMsgQueue", af::AfQueue::e_no_thread);  
-	if( false == msgQueue.isInitialized()) 
-	  return 1;
-
     af::EmittingMsgQueue emittingMsgQueue("EmittingMsgQueue", af::AfQueue::e_start_thread);
     if( false == emittingMsgQueue.isInitialized()) return 1;
 
@@ -93,7 +87,6 @@ int main(int argc, char *argv[])
 	threadArgs.renders   = &renders;
 	threadArgs.users     = &users;
 	threadArgs.monitors  = &monitors;
-	threadArgs.msgQueue  = &msgQueue;
     threadArgs.emittingMsgQueue =  &emittingMsgQueue;
     threadArgs.receivingMsgQueue = &receivingMsgQueue;
 

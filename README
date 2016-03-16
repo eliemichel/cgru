@@ -12,10 +12,13 @@ Ongoing work
 Deliveryless system:
 	The server does not initiate connections towards renders and monitors any
 	more. It sends messages only as answers to clients heartbeat.
+	Update: Working for afrender
 
 SocketPool:
 	Server tries to keep connections alive as much as possible, managing them
 	in a so called SocketPool object.
+	Update: Fully used by afsesrver and afrender, but we might reconsider the
+	way sockets are added to it and make it a non global variable.
 
 Logger:
 	Logging system is being cleaned up. A unified style is applied in order to
@@ -64,6 +67,109 @@ Server does not handle SIGINT correctly (one of the threads keep on running)
 
 When the task is terminated too quickly, the render has not propagated its ID
 yet when the TTaskProgress Msg is sent.
+
+Concepts
+--------
+
+/!\ This section has been imported from a more general document which was not
+specific to afanasy, so some concepts may be called differently in code.
+
+Task:
+	Basic working operation. Can be basically anything. Typically a call to
+	houdini/nuke/whatever to do some long time running task.
+
+Server: (afserver)
+	Main unit, storing information about tasks and scheduling their run.
+
+Worker: (afrender)
+	Task runner, that pulls (or is pushed) jobs from the server, launch them
+	and give some live feedback to the server.
+	In normal use, there is one single worker per machine.
+
+User:
+	A user is associated to each task, conditioning who have which rights over
+	this task, to edit or stop it, for instance.
+
+Monitor: (afwatch)
+	User Interface to monitor how tasks are doing. Displays all tasks and their
+	progress. Also allow operations on tasks, depending on user rights.
+
+Job:
+	A job is a set of tasks. The rational here is to consider that all tasks
+	produced by a given action should be grouped into a single job.
+	For instance, submitting a render of 100 frames could produce a job with
+	100 tasks, one for each frame. And if the same action also requires to
+	precompute some stuff, this would go in the job as well.
+
+Project: (no supported yet)
+	This is again a group, but larger, containing jobs related to a given
+	project.
+
+Dependency:
+	A task can require output data from another one. Hence, it must ensure that
+	this other task has successfully been accomplished before starting.
+	In the last example, frame computing tasks will depend on precomputing
+	tasks.
+
+Priority:
+	Some tasks are more importantly needed than others. Each task is associated
+	a priority, so that higher priority tasks are ran before.
+	The main difference with dependency is that if B depends on A, A must be
+	*finished* before B can start while if A has priority over B, A just
+	requires to be *started *for B to be sent to workers.
+
+User Action:
+	Any creation/edition/deletion of a task is a user action, in the sens that
+	it is executed as a user, even if it is actually automated (in software
+	plugins for instance).
+
+User Right:
+	As any user action is associated to a user, user rights are a way to
+	enable users to perform some actions.
+	Basically, a user will have the right to edit ore delete tasks that she
+	sent, but not other users, except for admin users.
+
+Tags:
+	Tasks can be tagged with a specific name whose decision is let to the end
+	user, and that would be used to associate types of tasks to specific
+	workers.
+	Each worker could be restricted to running only tasks with given tags. This
+	is a way to dedicate some machines to 3D, others to comp, etc.
+
+Solving:
+	Job solving is the action of assigning a job to a render.
+
+Features
+--------
+
+Failed tasks do not crash the worker process
+Task dependency
+Monitoring
+
+Orders of magnitude of a typical use case:
+    - ca.1000 jobs, made of ca.100 tasks
+
+[TODO]
+
+Misc links
+----------
+
+A comparison of a wide range of selected features available in render managers:
+http://www.royalrender.de/comparison.htm
+
+General purpose job schedulers:
+https://github.com/seomoz/qless
+https://github.com/resque/resque -> does not seem to have job priority
+
+OSS Render Managers:
+Flamenco:
+	https://github.com/armadillica/flamenco
+
+	Quick notes:
+	 - Blender only
+	 - Not tested with more than 50 nodes
+	 - Clear code
+
 
 Original README
 ---------------

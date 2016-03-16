@@ -21,7 +21,6 @@ struct ThreadArgs
 	RenderContainer   * renders;
 	JobContainer      * jobs;
 	UserContainer     * users;
-	af::MsgQueue      * msgQueue;
     af::EmittingMsgQueue   * emittingMsgQueue;
     af::ReceivingMsgQueue  * receivingMsgQueue;
 
