@@ -12,15 +12,13 @@
 #include "rendercontainer.h"
 #include "threadargs.h"
 #include "usercontainer.h"
+#include "processmsg.h"
 
 #define AFOUTPUT
 #undef AFOUTPUT
 #include "../include/macrooutput.h"
 
 extern bool AFRunning;
-
-// Messages reaction case function
-af::Msg * threadProcessMsgCase( ThreadArgs * i_args, af::Msg * i_msg);
 
 struct MostReadyRender : public std::binary_function <RenderAf*,RenderAf*,bool>
 {
@@ -96,7 +94,7 @@ void threadRunCycle( void * i_args)
 	af::Msg *message;
     while( message = a->receivingMsgQueue->popMsg( af::AfQueue::e_no_wait) )
     {
-        af::Msg *res = threadProcessMsgCase( a, message );
+        af::Msg *res = ProcessMsg::processMsg( a, message );
         if( NULL != res)
         {
             if( res->addressIsEmpty())

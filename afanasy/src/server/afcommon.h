@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../libafanasy/logger.h"
 #include "../libafanasy/environment.h"
 #include "../libafanasy/msgqueue.h"
 #include "../libafanasy/name_af.h"
