@@ -123,7 +123,6 @@ void RenderHost::setRegistered( int i_id)
 {
     m_connected = true;
     m_id = i_id;
-    m_first_valid_msg_id = af::Msg::getNextId(); // obsolete previously sent messages;
     setUpdateMsgType( af::Msg::TRenderUpdate);
     AF_LOG << "Render registered.";
 }

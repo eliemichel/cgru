@@ -227,6 +227,8 @@ void msgCase( af::Msg * msg, RenderHost &render)
         else if( (new_id > 0) && (render.getId() == 0))
 		{
             render.setRegistered( new_id);
+            // Obsolete all messages sent before the request whose this is an answer to
+            render.setFirstValidMsgId(msg->getRid());
 		}
 		// Server sends back zero id on any error
 		else if ( new_id == 0 )

@@ -61,6 +61,7 @@ void RenderAf::initDefaultValues()
 	m_farm_host_name = "no farm host";
 	m_farm_host_description = "";
 	m_services_num = 0;
+    m_last_msg_id = -1;
 	if( m_host.m_capacity == 0 ) m_host.m_capacity = af::Environment::getRenderDefaultCapacity();
 	if( m_host.m_max_tasks == 0 ) m_host.m_max_tasks = af::Environment::getRenderDefaultMaxTasks();
 	setBusy( false);
@@ -222,6 +223,7 @@ void RenderAf::setTask( af::TaskExec *taskexec, MonitorContainer * monitoring, b
 	{
 		af::Msg* msg = new af::Msg( af::Msg::TTask, taskexec);
 		msg->setAddress( this);
+        msg->setRid(this->getLastMsgId());
         m_emittingMsgQueue->pushMsg(msg);
 		std::string str = "Starting task: ";
 		str += taskexec->v_generateInfoString( false);

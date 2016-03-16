@@ -145,6 +145,7 @@ af::Msg* ProcessMsg::processMsg( ThreadArgs * i_args, af::Msg * i_msg)
         RenderAf * newRender = new RenderAf( i_msg);
         newRender->setAddress( i_msg->getAddress());
         newRender->setEmittingMsgQueue( i_args->emittingMsgQueue); // dirty
+        newRender->setLastMsgId( i_msg->getId());
         o_msg_response = i_args->renders->addRender( newRender, i_args->monitors);
         break;
     }
@@ -159,6 +160,11 @@ af::Msg* ProcessMsg::processMsg( ThreadArgs * i_args, af::Msg * i_msg)
       RenderAf* render = rendersIt.getRender( render_up.getId());
 
       int id = 0;
+      if(( NULL != render) && ( render->update( &render_up)))
+      {
+          render->setLastMsgId( i_msg->getId());
+          id = render->getId();
+      }
       o_msg_response = new af::Msg( af::Msg::TRenderId, id);
       break;
     }

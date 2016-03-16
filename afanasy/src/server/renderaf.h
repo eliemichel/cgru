@@ -95,6 +95,9 @@ public:
 
 	void wolWake(  MonitorContainer * i_monitoring, const std::string & i_msg = std::string());
 
+    inline void setLastMsgId(int32_t id) { m_last_msg_id = id; }
+    inline int32_t getLastMsgId() const { return m_last_msg_id; }
+
 
 public:
 	/// Set container:
@@ -143,6 +146,8 @@ private:
     std::queue<af::Msg*> m_msg_queue;  ///< Queue of messages to be sent
 
     af::EmittingMsgQueue *m_emittingMsgQueue;
+
+    int32_t m_last_msg_id; ///< ID of the last message received from this render, used as default RID
 
 private:
 	static RenderContainer * ms_renders;

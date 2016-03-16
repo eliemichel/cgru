@@ -98,6 +98,7 @@ public:
     void listenFailed( const af::Address & i_addr);
 
     inline int32_t getFirstValidMsgId() { return m_first_valid_msg_id; }
+    inline void setFirstValidMsgId(int32_t id) { m_first_valid_msg_id = id; }
 
 #ifdef WINNT
     void windowsMustDie();
