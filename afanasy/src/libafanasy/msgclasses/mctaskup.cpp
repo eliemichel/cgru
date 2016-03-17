@@ -1,5 +1,7 @@
 #include "mctaskup.h"
 
+#include "../../libafanasy/logger.h"
+
 #include <stdio.h>
 #include <memory.h>
 
@@ -66,18 +68,18 @@ MCTaskUp::~MCTaskUp()
 
 void MCTaskUp::v_readwrite( Msg * msg)
 {
-	rw_int32_t( m_clientid,       msg);
+    rw_int32_t( m_clientid,       msg);
 
-	rw_int32_t( m_numjob,         msg);
-	rw_int32_t( m_numblock,       msg);
-	rw_int32_t( m_numtask,        msg);
-	rw_int32_t( m_number,         msg);
+    rw_int32_t( m_numjob,         msg);
+    rw_int32_t( m_numblock,       msg);
+    rw_int32_t( m_numtask,        msg);
+    rw_int32_t( m_number,         msg);
 
-	rw_int8_t ( m_status,         msg);
-	rw_int8_t ( m_percent,        msg);
-	rw_int32_t( m_frame,          msg);
-	rw_int8_t ( m_percent_frame,  msg);
-	rw_String ( m_activity,       msg);
+    rw_int8_t ( m_status,         msg);
+    rw_int8_t ( m_percent,        msg);
+    rw_int32_t( m_frame,          msg);
+    rw_int8_t ( m_percent_frame,  msg);
+    rw_String ( m_activity,       msg);
 
 	rw_StringVect( m_parsed_files, msg);
 	rw_int32_t(    m_datalen,      msg);

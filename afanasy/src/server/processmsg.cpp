@@ -577,6 +577,8 @@ af::Msg* ProcessMsg::processMsg( ThreadArgs * i_args, af::Msg * i_msg)
     case af::Msg::TTaskUpdateState:
     {
       af::MCTaskUp taskup( i_msg);
+      i_msg->resetWrittenSize();
+      AF_DEBUG << "--> taskup: " << taskup;
       af::MCTaskPos taskpos( taskup.getNumJob(), taskup.getNumBlock(), taskup.getNumTask(), taskup.getNumber());
       o_msg_response = new af::Msg( af::Msg::TRenderCloseTask, &taskpos);
     }

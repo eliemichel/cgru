@@ -246,6 +246,7 @@ void Af::rw_String( std::string & string, Msg * msg)
 	else
 	{
 		rw_uint32_t( length, msg);
+        assert( length >= 1);
 		char * buffer = msg->writtenBuffer( length);
 		if( buffer == NULL ) return;
 		string = std::string(buffer, length-1);

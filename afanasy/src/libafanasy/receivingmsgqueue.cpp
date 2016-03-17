@@ -91,7 +91,7 @@ void ReceivingMsgQueue::processItem(AfQueueItem *item)
 {
     Msg *msg = static_cast<Msg*>(item);
     mgstat2.put( msg->type(), msg->writeSize());
-    AF_DEBUG << "Received message: " << msg;
+    AF_DEBUG << "---> " << msg;
 }
 
 void ReceivingMsgQueue::run()

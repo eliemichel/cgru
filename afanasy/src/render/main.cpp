@@ -219,7 +219,7 @@ void msgCase( af::Msg * msg, RenderHost &render)
 		// Server sends back -1 id if a render with the same hostname already exists:
 		if( new_id == -1)
 		{
-            AF_ERR << "Render with this hostname '" << af::Environment::getHostName() << "' already registered.";
+            AF_ERR << "Render with this hostn   ame '" << af::Environment::getHostName() << "' already registered.";
 			AFRunning = false;
 		}
 		// Render was trying to register (its id==0) and server has send id>0
