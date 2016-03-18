@@ -351,7 +351,103 @@ void MonitorContainer::dispatch()
 	//
 	// Delete all events:
 	//
-	clearEvents();
+   clearEvents();
+}
+
+bool MonitorContainer::processMsg(af::Msg *msg)
+{
+    // Return address
+    af::Address addr = msg->getAddress();
+
+    switch( msg->type())
+    {
+    case af::Msg::TMonitorRegister:
+    {
+        AfContainerLock lock( this, AfContainerLock::WRITELOCK);
+
+        MonitorAf * newMonitor = new MonitorAf( msg);
+        newMonitor->setAddressIP( msg->getAddress());
+        emitMsg( addMonitor( newMonitor), &addr);
+        return true;
+    }
+    case af::Msg::TMonitorUpdateId:
+    {
+        AfContainerLock lock( this, AfContainerLock::READLOCK);
+
+        int32_t id = 0;
+        if( updateId( msg->int32()))
+            id = msg->int32();
+        emitMsg( new af::Msg( af::Msg::TMonitorId, id), &addr);
+        return true;
+    }
+    case af::Msg::TMonitorsListRequest:
+    {
+        AfContainerLock lock( this, AfContainerLock::READLOCK);
+
+        emitMsg( generateList( af::Msg::TMonitorsList), &addr);
+        return true;
+    }
+    case af::Msg::TMonitorsListRequestIds:
+    {
+        AfContainerLock lock( this, AfContainerLock::READLOCK);
+
+        af::MCGeneral ids( msg);
+        emitMsg( generateList( af::Msg::TMonitorsList, ids), &addr);
+        return true;
+    }
+    case af::Msg::TMonitorLogRequestId:
+    {
+        AfContainerLock lock( this,  AfContainerLock::READLOCK);
+
+        MonitorContainerIt it( this);
+        MonitorAf* node = it.getMonitor( msg->int32());
+
+        // FIXME: Better to return some message in any case.
+        if( node == NULL )
+            return true;
+
+        emitMsg( af::Msg::msgStringList( node->getLog()), &addr);
+        return true;
+    }
+    case af::Msg::TString:
+    {
+        // TString is broadcasted to all monitors
+        // elie: imho it should be called TMonitorBroadCastString or so
+        std::string str = msg->getString();
+        if( false == str.empty()) return true;
+
+        AfContainerLock mLock( this, AfContainerLock::WRITELOCK);
+        sendMessage( str);
+        return true;
+    }
+    case af::Msg::TMonitorDeregister:
+    {
+        MonitorContainerIt it( this);
+        MonitorAf* node = it.getMonitor( msg->int32());
+        if( node ) node->deregister();
+        return true;
+    }
+    case af::Msg::TMonitorMessage:
+    {
+        af::MCGeneral mcgeneral( msg);
+        sendMessage( mcgeneral);
+        return true;
+    }
+    case af::Msg::TMonitorSubscribe:
+    case af::Msg::TMonitorUnsubscribe:
+    case af::Msg::TMonitorUsersJobs:
+    case af::Msg::TMonitorJobsIdsAdd:
+    case af::Msg::TMonitorJobsIdsSet:
+    case af::Msg::TMonitorJobsIdsDel:
+    {
+        af::MCGeneral ids( msg);
+        setInterest( msg->type(), ids);
+        return true;
+    }
+    default:
+        // The message was not for us
+        return false;
+    }
 }
 
 void MonitorContainer::clearEvents()

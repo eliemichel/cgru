@@ -13,10 +13,11 @@ public:
    RenderContainer();
    ~RenderContainer();
 
-/// Add new Render to container, new id returned on success, else return 0.
+   /// Add new Render to container, new id returned on success, else return 0.
    af::Msg * addRender( RenderAf *newRender, MonitorContainer * monitoring = NULL);
 
-/// Set Render with \c id zombie, by calling RenderAf::setZombie( \c updateTaskState ) function.
+   /// Inherited from MsgHandlerItf
+   virtual bool processMsg(af::Msg *msg);
 };
 
 /// Renders iterator.

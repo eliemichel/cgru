@@ -37,6 +37,9 @@ public:
 
    void dispatch();
 
+   /// Inherited from MsgHandlerItf
+   virtual bool processMsg(af::Msg *msg);
+
 private:
 
    std::list<int32_t> * events;

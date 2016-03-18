@@ -85,7 +85,82 @@ void UserContainer::logAction( const Action & i_action, const std::string & i_no
 {
 	UserAf * user = getUser( i_action.user_name);
 	if( user )
-		user->logAction( i_action, i_node_name);
+        user->logAction( i_action, i_node_name);
+}
+
+af::User * UserContainer::getUserByName(std::string name)
+{
+    UserContainerIt usersIt( this);
+    for( af::User *user = usersIt.user(); user != NULL; usersIt.next(), user = usersIt.user())
+        if( user->getName() == name)
+            return user;
+    return NULL;
+}
+
+bool UserContainer::processMsg(Msg *msg)
+{
+    // Return address
+    af::Address addr = msg->getAddress();
+
+    switch( msg->type())
+    {
+    case af::Msg::TUserIdRequest:
+    {
+        AfContainerLock lock( this, AfContainerLock::READLOCK);
+
+        af::MsgClassUserHost usr( msg);
+        af::User *user = getUserByName( usr.getUserName());
+        int id = 0;
+        if( NULL != user )
+            id = user->getId();
+        emitMsg( new af::Msg( af::Msg::TUserId, id), &addr);
+        return true;
+    }
+    case af::Msg::TUsersListRequest:
+    {
+        AfContainerLock lock( this, AfContainerLock::READLOCK);
+
+        emitMsg( generateList( af::Msg::TUsersList), &addr);
+        return true;
+    }
+    case af::Msg::TUsersListRequestIds:
+    {
+        AfContainerLock lock( this, AfContainerLock::READLOCK);
+
+        af::MCGeneral ids( msg);
+        emitMsg( generateList( af::Msg::TUsersList, ids), &addr);
+        return true;
+    }
+    case af::Msg::TUserLogRequestId:
+    {
+        AfContainerLock lock( this,  AfContainerLock::READLOCK);
+
+        UserContainerIt usersIt( this);
+        UserAf* user = usersIt.getUser( msg->int32());
+        // FIXME: Better to return some message in any case.
+        if( user == NULL )
+            return true;
+        emitMsg( af::Msg::msgStringList( user->getLog()), &addr);
+        return true;
+    }
+    case af::Msg::TUserJobsOrderRequestId:
+    {
+        AfContainerLock lock( this,  AfContainerLock::READLOCK);
+
+        UserContainerIt usersIt( this);
+        UserAf* user = usersIt.getUser( msg->int32());
+        // FIXME: Better to return some message in any case.
+        if( user == NULL )
+            return true;
+        af::MCGeneral ids;
+        ids.setId( user->getId());
+        ids.setList( user->generateJobsIds());
+        emitMsg( new af::Msg( af::Msg::TUserJobsOrder, &ids), &addr);
+        return true;
+    }
+    default:
+        return false;
+    }
 }
 
 int UserContainer::addUser( UserAf * i_user)

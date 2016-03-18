@@ -506,6 +506,13 @@ af::Msg * Msg::msgString( const std::string & i_str)
     return o_msg;
 }
 
+af::Msg * Msg::msgStringList( const std::list<std::string> & i_list)
+{
+    af::Msg * o_msg = new af::Msg();
+    o_msg->setStringList( i_list);
+    return o_msg;
+}
+
 
 const char * Msg::TNAMES[]=
 {

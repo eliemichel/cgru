@@ -83,6 +83,97 @@ af::Msg * RenderContainer::addRender( RenderAf *newRender, MonitorContainer * mo
    return NULL;
 }
 
+bool RenderContainer::processMsg(af::Msg *msg)
+{
+    // Return address
+    af::Address addr = msg->getAddress();
+
+    switch( msg->type())
+    {
+    case af::Msg::TRenderUpdate:
+    {
+        AfContainerLock lock( this, AfContainerLock::READLOCK);
+
+        af::Render render_up( msg);
+        RenderContainerIt rendersIt( this);
+        RenderAf* render = rendersIt.getRender( render_up.getId());
+
+        int id = 0;
+        if(( NULL != render) && ( render->update( &render_up)))
+        {
+            render->setLastMsgId( msg->getId());
+            id = render->getId();
+        }
+        emitMsg( new af::Msg( af::Msg::TRenderId, id), &addr);
+        return true;
+    }
+    case af::Msg::TRendersListRequest:
+    {
+        AfContainerLock lock( this, AfContainerLock::READLOCK);
+
+        emitMsg( generateList( af::Msg::TRendersList), &addr);
+        return true;
+    }
+    case af::Msg::TRendersListRequestIds:
+    {
+        AfContainerLock lock( this, AfContainerLock::READLOCK);
+
+        af::MCGeneral ids( msg);
+        emitMsg( generateList( af::Msg::TRendersList, ids), &addr);
+        return true;
+    }
+    case af::Msg::TRendersResourcesRequestIds:
+    {
+        AfContainerLock lock( this, AfContainerLock::READLOCK);
+
+        af::MCGeneral ids( msg);
+        emitMsg( generateList( af::Msg::TRendersResources, ids), &addr);
+        return true;
+    }
+    case af::Msg::TRenderLogRequestId:
+    {
+        AfContainerLock lock( this,  AfContainerLock::READLOCK);
+
+        RenderContainerIt rendersIt( this);
+        RenderAf* render = rendersIt.getRender( msg->int32());
+        // FIXME: Better to return some message in any case.
+        if( render == NULL )
+            break;
+        emitMsg( af::Msg::msgStringList( render->getLog()), &addr);
+        return true;
+    }
+    case af::Msg::TRenderTasksLogRequestId:
+    {
+        AfContainerLock lock( this,  AfContainerLock::READLOCK);
+
+        RenderContainerIt rendersIt( this);
+        RenderAf* render = rendersIt.getRender( msg->int32());
+        // FIXME: Better to return some message in any case.
+        if( render == NULL )
+            break;
+        if( render->getTasksLog().empty())
+            emitMsg( af::Msg::msgString( "No tasks execution log."), &addr);
+        else
+            emitMsg( af::Msg::msgStringList( render->getTasksLog()), &addr);
+        return true;
+    }
+    case af::Msg::TRenderInfoRequestId:
+    {
+        AfContainerLock lock( this,  AfContainerLock::READLOCK);
+
+        RenderContainerIt rendersIt( this);
+        RenderAf* render = rendersIt.getRender( msg->int32());
+        // FIXME: Better to return some message in any case.
+        if( render == NULL )
+            break;
+        emitMsg( render->writeFullInfo(), &addr);
+        return true;
+    }
+    default:
+        return false;
+    }
+}
+
 //##############################################################################
 
 RenderContainerIt::RenderContainerIt( RenderContainer* container, bool skipZombies):

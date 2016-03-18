@@ -32,6 +32,10 @@ Fire and Forget messages:
 	separately, with a "response ID" specifying to which original message this
 	is an answer.
 
+Messages everywhere:
+	Messages would be handled by the object to which they are related. The main
+	message processing routine would just route messages to the appropriate
+	object.
 
 HOWTOs
 ------
@@ -169,6 +173,64 @@ Flamenco:
 	 - Blender only
 	 - Not tested with more than 50 nodes
 	 - Clear code
+
+TODOs and misc thoughts
+-----------------------
+
+This block of code is very common when replying to broken requests:
+
+	if( NULL == job )
+	{
+		std::ostringstream ss;
+		ss << "Msg::TTaskErrorHostsRequest: No job with id=" << mctaskpos.getJobId();
+		emitMsg( af::Msg::msgString( ss.str()), addr);
+		return true;
+	}
+
+Maybe we could have some kind of macro for this, although I'm not sure how to
+build it while avoiding getting too much black/dirty magic.
+
+A nice syntax for queues would be something like this:
+
+	emitting_queue << msg_to_send;
+	receiving_queue >> incoming_msg;
+
+A question with this is how to set the address.
+
+
+Coding guidelines
+-----------------
+
+There are already some guidelines provided by @timurhai, but here are a couple
+of other rules that I try to keep in mind.
+
+Comparison to NULL:
+	Missing a '=' in "==" is quite common, but can be very armful in this case:
+
+		if (pointer == NULL)
+
+	Without it, it becomes:
+
+		if (pointer = NULL)
+
+	Which means that it associates the NULL value to the pointer and erase its
+	previous value. A very simple way to avoid this is to put the NULL first,
+	which would led the compiler to complain when missing a '='.
+
+		if (NULL == pointer)
+
+Avoid using pointers when a reference is more semantically appropriate:
+	It's not always easy to determine whether a reference or a pointer is more
+	appropriate, but I believe that stopping using pointers for everything is
+	one of the major differences between C and C++, so let's use references!
+
+Orthogonal architecture:
+	In order to keep the overall architecture easy to understand and to edit,
+	I think it's a good practice to determine a clear set of "Concepts", make
+	their dependencies appear clearly and try as much as possible not to
+	"cheat" with it. If one needs to bypass something, or add a link between to
+	concept objects, it's a signal showing that concepts should be
+	reconsidered.
 
 
 Original README

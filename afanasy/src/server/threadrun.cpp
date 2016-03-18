@@ -53,6 +53,8 @@ void threadRunCycle( void * i_args)
     //AF_LOG << "ThreadRun::run";
 	ThreadArgs * a = (ThreadArgs*)i_args;
 
+    MainMsgHandler msgHandler(a->emittingMsgQueue, a);
+
 	long long cycle = 0;
 	//std::clock_t last_tick = std::clock();
 	//std::clock_t to_wait = 0;
@@ -93,15 +95,7 @@ void threadRunCycle( void * i_args)
 
 	af::Msg *message;
     while( message = a->receivingMsgQueue->popMsg( af::AfQueue::e_no_wait) )
-    {
-        af::Msg *res = ProcessMsg::processMsg( a, message );
-        if( NULL != res)
-        {
-            if( res->addressIsEmpty())
-                res->setAddress( message->getAddress());
-            a->emittingMsgQueue->pushMsg( res);
-        }
-    }
+        msgHandler.processMsg( message );
 
 	//
 	// Refresh data:

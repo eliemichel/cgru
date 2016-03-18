@@ -193,6 +193,172 @@ bool JobContainer::solve( RenderAf * i_render, MonitorContainer * i_monitoring)
     return jobList.solve(af::Node::SolveByPriority, i_render, i_monitoring);
 }
 
+bool JobContainer::processMsg(af::Msg *msg)
+{
+    // Return address
+    af::Address addr = msg->getAddress();
+
+    switch( msg->type())
+    {
+    case af::Msg::TJobRequestId:
+    {
+        AfContainerLock lock( this,  AfContainerLock::READLOCK);
+
+        JobContainerIt jobsIt( this);
+        JobAf* job = jobsIt.getJob( msg->int32());
+        if( job == NULL )
+        {
+            emitMsg( new af::Msg( af::Msg::TJobRequestId, 0), &addr);
+            return true;
+        }
+        else
+        {
+            emitMsg( new af::Msg( af::Msg::TJob, job), &addr);
+            return true;
+        }
+    }
+    case af::Msg::TJobLogRequestId:
+    {
+        AfContainerLock lock( this,  AfContainerLock::READLOCK);
+
+        JobContainerIt jobsIt( this);
+        JobAf* job = jobsIt.getJob( msg->int32());
+        // FIXME: Better to return some message in any case.
+        if( job == NULL )
+            break;
+        emitMsg( af::Msg::msgStringList( job->getLog()), &addr);
+        return true;
+    }
+    case af::Msg::TJobErrorHostsRequestId:
+    {
+        AfContainerLock lock( this,  AfContainerLock::READLOCK);
+
+        JobContainerIt jobsIt( this);
+        JobAf* job = jobsIt.getJob( msg->int32());
+        // FIXME: Better to return some message in any case.
+        if( job == NULL )
+            return true;
+        emitMsg( af::Msg::msgString( job->v_getErrorHostsListString()), &addr);
+        return true;
+    }
+    case af::Msg::TJobProgressRequestId:
+    {
+        AfContainerLock lock( this,  AfContainerLock::READLOCK);
+
+        JobContainerIt jobsIt( this);
+        JobAf* job = jobsIt.getJob( msg->int32());
+        if( job == NULL )
+        {
+            // FIXME: Send back the same message on error - is it good?
+            emitMsg( new af::Msg( af::Msg::TJobProgressRequestId, 0), &addr);
+            return true;
+        }
+        af::Msg *res = new af::Msg;
+        job->writeProgress( *res);
+        emitMsg( res, &addr);
+        return true;
+    }
+    case af::Msg::TJobsListRequest:
+    {
+        AfContainerLock lock( this, AfContainerLock::READLOCK);
+
+        emitMsg( generateList( af::Msg::TJobsList), &addr);
+        return true;
+    }
+    case af::Msg::TJobsListRequestIds:
+    {
+        AfContainerLock lock( this, AfContainerLock::READLOCK);
+
+        af::MCGeneral ids( msg);
+        emitMsg( generateList( af::Msg::TJobsList, ids), &addr);
+        return true;
+    }
+    case af::Msg::TJobsWeightRequest:
+    {
+        AfContainerLock jLock( this, AfContainerLock::READLOCK);
+
+        af::MCJobsWeight jobsWeight;
+        getWeight( jobsWeight);
+        emitMsg( new af::Msg( af::Msg::TJobsWeight, &jobsWeight), &addr);
+        return true;
+    }
+    case af::Msg::TTaskRequest:
+    {
+        AfContainerLock lock( this,  AfContainerLock::READLOCK);
+
+        af::MCTaskPos mctaskpos( msg);
+        JobContainerIt jobsIt( this);
+        JobAf* job = jobsIt.getJob( mctaskpos.getJobId());
+        if( NULL == job )
+        {
+            std::ostringstream ss;
+            ss << "Msg::TTaskRequest: No job with id=" << mctaskpos.getJobId();
+            emitMsg( af::Msg::msgString( ss.str()), &addr);
+            return true;
+        }
+        af::TaskExec * task = job->generateTask( mctaskpos.getNumBlock(), mctaskpos.getNumTask());
+        if( NULL == task )
+        {
+            std::ostringstream ss;
+            ss << "Msg::TTaskRequest: No such task[" << mctaskpos.getJobId() << "][" << mctaskpos.getNumBlock() << "][" << mctaskpos.getNumTask() << "]";
+            emitMsg( af::Msg::msgString( ss.str()), &addr);
+            return true;
+        }
+        emitMsg( new af::Msg( af::Msg::TTask, task), &addr);
+        delete task;
+        return true;
+    }
+    case af::Msg::TTaskLogRequest:
+    {
+        AfContainerLock lock( this,  AfContainerLock::READLOCK);
+
+        af::MCTaskPos mctaskpos( msg);
+        JobContainerIt jobsIt( this);
+        JobAf* job = jobsIt.getJob( mctaskpos.getJobId());
+        if( NULL == job )
+        {
+            std::ostringstream ss;
+            ss << "Msg::TTaskLogRequest: No job with id=" << mctaskpos.getJobId();
+            emitMsg( af::Msg::msgString( ss.str()), &addr);
+            return true;
+        }
+        const std::list<std::string> list = job->getTaskLog( mctaskpos.getNumBlock(), mctaskpos.getNumTask());
+        if( list.size() == 0)
+        {
+            std::list<std::string> list;
+            list.push_back("Task log is empty.");
+            emitMsg( af::Msg::msgStringList( list), &addr);
+        }
+        else
+        {
+            emitMsg( af::Msg::msgStringList( list), &addr);
+        }
+        return true;
+    }
+    case af::Msg::TTaskErrorHostsRequest:
+    {
+        AfContainerLock lock( this,  AfContainerLock::READLOCK);
+
+        af::MCTaskPos mctaskpos( msg);
+        JobContainerIt jobsIt( this);
+        JobAf* job = jobsIt.getJob( mctaskpos.getJobId());
+        if( NULL == job )
+        {
+            std::ostringstream ss;
+            ss << "Msg::TTaskErrorHostsRequest: No job with id=" << mctaskpos.getJobId();
+            emitMsg( af::Msg::msgString( ss.str()), &addr);
+            return true;
+        }
+        std::string msg = job->v_getErrorHostsListString( mctaskpos.getNumBlock(), mctaskpos.getNumTask());
+        emitMsg( af::Msg::msgString( msg), &addr);
+        break;
+    }
+    default:
+        // The message was not for us
+        return false;
+    }
+}
+
 
 //############################################################################
 //                               JobQueueIt

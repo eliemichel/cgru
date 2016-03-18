@@ -426,8 +426,6 @@ void TaskProcess::sendTaskSate()
 		stdout_size,
 		stdout_data);
 
-    AF_DEBUG << "<-- taskup: " << taskup;
-
 	collectFiles( taskup);
 	taskup.setParsedFiles( m_service->getParsedFiles());
 

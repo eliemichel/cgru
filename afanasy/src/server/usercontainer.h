@@ -6,13 +6,14 @@
 #include "afcontainerit.h"
 #include "aflist.h"
 #include "useraf.h"
+#include "processmsg.h"
 
 class Action;
 class MsgAf;
 class RenderAf;
 
 /// Users container.
-class UserContainer: public AfContainer
+class UserContainer: public AfContainer, public BaseMsgHandler
 {
 public:
 	UserContainer();
@@ -43,6 +44,12 @@ public:
 	UserAf * getUser( const std::string & i_name );
 	void updateTimeActivity( const std::string & i_name );
 	void logAction( const Action & i_action, const std::string & i_node_name);
+
+    /// Get a user by its name
+    af::User *getUserByName(std::string name);
+
+    /// Inherited from MsgHandlerItf
+    virtual bool processMsg(af::Msg *msg);
 
 private:
 	AfList m_userslist; ///< Users list.

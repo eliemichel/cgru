@@ -10,12 +10,13 @@
 #include "afcontainer.h"
 #include "afcontainerit.h"
 #include "jobaf.h"
+#include "processmsg.h"
 
 class MsgAf;
 class UserContainer;
 
 /// All Afanasy jobs store in this container.
-class JobContainer: public AfContainer
+class JobContainer: public AfContainer, public BaseMsgHandler
 {
 public:
 	JobContainer();
@@ -30,6 +31,9 @@ public:
 	void getWeight( af::MCJobsWeight & jobsWeight );
 
     bool solve( RenderAf * i_render, MonitorContainer * i_monitoring);
+
+    /// Inherited from MsgHandlerItf
+    virtual bool processMsg(af::Msg *msg);
 };
 
 //########################## Iterator ##############################

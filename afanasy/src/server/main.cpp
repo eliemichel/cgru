@@ -90,6 +90,11 @@ int main(int argc, char *argv[])
     threadArgs.emittingMsgQueue =  &emittingMsgQueue;
     threadArgs.receivingMsgQueue = &receivingMsgQueue;
 
+    jobs.setEmittingMsgQueue(emittingMsgQueue);
+    renders.setEmittingMsgQueue(emittingMsgQueue);
+    users.setEmittingMsgQueue(emittingMsgQueue);
+    monitors.setEmittingMsgQueue(emittingMsgQueue);
+
 	/*
 	  Creating the afcommon object will actually create many message queues
 	  that will spawn threads. Have a look in the implementation of AfCommon.

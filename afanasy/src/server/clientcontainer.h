@@ -1,12 +1,14 @@
 #pragma once
 
 #include "../libafanasy/client.h"
+#include "../libafanasy/emittingmsgqueue.h"
 
 #include "afcontainer.h"
 #include "afcontainerit.h"
+#include "processmsg.h"
 
 /// Clients container (abstact class, clients are Render, Talk, Monitor).
-class ClientContainer : public AfContainer
+class ClientContainer : public AfContainer, public BaseMsgHandler
 {
 public:
    ClientContainer( std::string ContainerName, int MaximumSize);
@@ -14,27 +16,13 @@ public:
 
    bool updateId( int id);
 
+   /// Inherited from MsgHandlerItf
+   virtual bool processMsg(af::Msg *msg) { return false; }
+
 protected:
-/// Add new Client to container, new id returned on success, else return 0.
-//	int addClient( af::Client *newClient, bool deleteSameAddress = false, MonitorContainer * monitoring = NULL, int msgEventType = 0);
+    /// Add new Client to container, new id returned on success, else return 0.
 	int addClient( AfNodeSrv * i_nodesrv, bool deleteSameAddress = false, MonitorContainer * monitoring = NULL, int msgEventType = 0);
 
 protected:
 	static af::MsgQueue * ms_msg_queue;
-
-private:
-
 };
-/*
-/// Clients interator.
-class ClientContainerIt : public AfContainerIt
-{
-public:
-   ClientContainerIt( ClientContainer* container, bool skipZombies = true);
-   ~ClientContainerIt();
-
-	inline af::Client* Client() { return (af::Client*)(node->m_node); }
-	inline af::Client* getClient( int id) { return (af::Client*)(get( id)->m_node); }
-
-private:
-};*/

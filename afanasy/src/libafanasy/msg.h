@@ -373,6 +373,9 @@ public:
     /// Convenient utility to built string message
     static Msg * msgString( const std::string & i_str);
 
+    /// Convenient utility to built string list message
+    static Msg * msgStringList( const std::list<std::string> & i_list);
+
     static inline int32_t getNextId() { return ms_nextId; }
 
 private:
