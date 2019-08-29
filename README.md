@@ -1,3 +1,5 @@
+*About this branch* This is a backport of PR #451 "Add a block/task to an existing job" to version 2.3.1.
+
 ## CGRU <img src="https://raw.githubusercontent.com/CGRU/cgru/master/favicon.ico" align="right" width="90">
 
 CGRU is the Computer Graphics Tools Pack.
